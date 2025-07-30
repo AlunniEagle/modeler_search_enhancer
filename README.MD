@@ -154,7 +154,7 @@ We welcome contributions! Please follow these guidelines:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-repo/modeler-search-enhancer.git
+   git clone https://github.com/AlunniEagle/modeler-search-enhancer.git
    cd modeler-search-enhancer
    ```
 
@@ -181,6 +181,11 @@ We welcome contributions! Please follow these guidelines:
 
 This project is licensed under the **GNU General Public License v2.0** - see the [LICENSE](LICENSE) file for details.
 
+```
+Copyright (C) 2025 GIS Team
+Email: gis@eagleprojects.it
+```
+
 ### License Summary
 - ✅ **Use** - Commercial and private use allowed
 - ✅ **Modify** - Modification and distribution allowed
@@ -194,8 +199,8 @@ This project is licensed under the **GNU General Public License v2.0** - see the
 ### Getting Help
 
 - **📖 Documentation:** Built-in Help (Plugins → Modeler Search Enhancer → Help)
-- **🐛 Issues:** [GitHub Issues](https://github.com/your-repo/modeler-search-enhancer/issues)
-- **💬 Discussions:** [GitHub Discussions](https://github.com/your-repo/modeler-search-enhancer/discussions)
+- **🐛 Issues:** [GitHub Issues](https://github.com/AlunniEagle/modeler-search-enhancer/issues)
+- **💬 Discussions:** [GitHub Discussions](https://github.com/AlunniEagle/modeler-search-enhancer/wiki)
 - **📧 Email:** gis@eagleprojects.it
 
 ### Reporting Bugs
@@ -221,6 +226,6 @@ When reporting bugs, please include:
 
 **Made with ❤️ for the QGIS Community**
 
-[⭐ Star this repository](https://github.com/your-repo/modeler-search-enhancer) if you find it useful!
+[⭐ Star this repository](https://github.com/AlunniEagle/modeler-search-enhancer) if you find it useful!
 
 </div>
