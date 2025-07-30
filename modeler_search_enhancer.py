@@ -150,16 +150,9 @@ class ModelerSearchEnhancer:
         
         self.iface.addPluginToMenu(
             self.tr(u'&Modeler Search Enhancer'),
-            self.main_action
-        )
-        self.iface.addPluginToMenu(
-            self.tr(u'&Modeler Search Enhancer'),
             self.help_action
         )
         
-        self.iface.addToolBarIcon(self.main_action)
-        
-        self.actions.append(self.main_action)
         self.actions.append(self.help_action)
 
     def showPluginInfo(self):
@@ -551,6 +544,3 @@ class ModelerSearchEnhancer:
             self.iface.removePluginMenu(
                 self.tr(u'&Modeler Search Enhancer'),
                 action)
-            
-            if action == getattr(self, 'main_action', None):
-                self.iface.removeToolBarIcon(action)

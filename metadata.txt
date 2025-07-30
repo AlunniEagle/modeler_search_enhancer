@@ -2,7 +2,7 @@
 name=Modeler Search Enhancement
 qgisMinimumVersion=3.28.9
 description=Advanced search functionality for QGIS Processing Modeler algorithms and parameters
-version=1.0
+version=1.1
 author=GIS Team
 email=gis@eagleprojects.it
 
@@ -12,7 +12,12 @@ tracker=https://github.com/AlunniEagle/modeler_search_enhancer/issues
 repository=https://github.com/AlunniEagle/modeler_search_enhancer
 
 hasProcessingProvider=no
-changelog=1.0
+changelog=1.1
+        - Removed toolbar icon to reduce visual clutter
+        - Removed main action from plugin menu, keeping only Help
+        - Plugin now operates purely in background mode
+        - Streamlined interface while maintaining full functionality
+        1.0
         - First Release
 
 tags=python, modeler, search
