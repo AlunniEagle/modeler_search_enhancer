@@ -181,11 +181,6 @@ We welcome contributions! Please follow these guidelines:
 
 This project is licensed under the **GNU General Public License v2.0** - see the [LICENSE](LICENSE) file for details.
 
-```
-Copyright (C) 2025 GIS Team
-Email: gis@eagleprojects.it
-```
-
 ### License Summary
 - ✅ **Use** - Commercial and private use allowed
 - ✅ **Modify** - Modification and distribution allowed
@@ -199,8 +194,8 @@ Email: gis@eagleprojects.it
 ### Getting Help
 
 - **📖 Documentation:** Built-in Help (Plugins → Modeler Search Enhancer → Help)
-- **🐛 Issues:** [GitHub Issues](https://github.com/AlunniEagle/modeler-search-enhancer/issues)
-- **💬 Discussions:** [GitHub Discussions](https://github.com/AlunniEagle/modeler-search-enhancer/wiki)
+- **🐛 Issues:** [GitHub Issues](https://github.com/AlunniEagle/modeler_search_enhancer/issues)
+- **💬 Discussions:** [GitHub Discussions](https://github.com/AlunniEagle/modeler_search_enhancer/wiki)
 - **📧 Email:** gis@eagleprojects.it
 
 ### Reporting Bugs
