@@ -5,64 +5,93 @@
  Search functionality for QGIS Processing Modeler algorithm outputs/inputs
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QTimer, Qt, QSortFilterProxyModel, QStringListModel
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QDialog, QLabel, QCompleter, QComboBox
+
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QTimer, Qt, QSortFilterProxyModel, QStringListModel, QUrl
+from qgis.PyQt.QtGui import QIcon, QDesktopServices
+from qgis.PyQt.QtWidgets import QAction, QDialog, QLabel, QCompleter, QComboBox, QMessageBox
 from qgis.core import QgsApplication
+import os
 import os.path
 
 
 class SearchableComboBox(QComboBox):
-    """ComboBox con ricerca integrata"""
-    
     def __init__(self, parent=None):
+        """
+        Initializes a custom QComboBox with enhanced search and autocomplete features.
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        Features:
+            - Sets the combo box to be editable and prevents new items from being inserted by the user.
+            - Uses a QSortFilterProxyModel to enable case-insensitive filtering of the combo box items.
+            - Integrates a QCompleter with unfiltered popup completion mode for improved autocompletion.
+            - Connects the line edit's textEdited signal to update the filter string in real time.
+            - Connects the completer's activated signal to a custom handler for item selection.
+        """
         super().__init__(parent)
         self.setEditable(True)
         self.setInsertPolicy(QComboBox.NoInsert)
         
-        # Modello per il filtro
         self.pFilterModel = QSortFilterProxyModel(self)
         self.pFilterModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
         self.pFilterModel.setSourceModel(self.model())
         
-        # Completer personalizzato
         self.completer = QCompleter(self.pFilterModel, self)
         self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
         self.setCompleter(self.completer)
         
-        # Connessioni
         self.lineEdit().textEdited.connect(self.pFilterModel.setFilterFixedString)
         self.completer.activated.connect(self.onCompleterActivated)
 
     def onCompleterActivated(self, text):
-        """Gestisce la selezione dal completer"""
+        """
+        Slot called when an item is activated in the completer.
+        Args:
+            text (str): The text of the activated completer item.
+        Returns:
+            None
+        """
         if text:
             index = self.findText(text)
             if index >= 0:
                 self.setCurrentIndex(index)
 
     def setModel(self, model):
-        """Override setModel per aggiornare il proxy"""
+        """
+        Sets the given model for the view and updates the proxy filter model and completer accordingly.
+        Args:
+            model (QAbstractItemModel): The model to be set for the view.
+        Returns:
+            None
+        """
         super().setModel(model)
         self.pFilterModel.setSourceModel(model)
         self.completer.setModel(self.pFilterModel)
 
     def setModelColumn(self, column):
-        """Override setModelColumn"""
+        """
+        Sets the column used for model completion and filtering.
+        Args:
+            column (int): The index of the column to be used for completion and filtering.
+        Returns:
+            None
+        """
         self.completer.setCompletionColumn(column)
         self.pFilterModel.setFilterKeyColumn(column)
         super().setModelColumn(column)
 
 
 class ModelerSearchEnhancer:
-    """Plugin per aggiungere ricerca agli input del Modeler"""
-
     def __init__(self, iface):
-        """Constructor."""
+        """
+        Initializes the ModelerSearchEnhancer plugin.
+        Args:
+            iface: The QGIS interface instance.
+        This method sets up the plugin directory, loads the appropriate locale translation if available,
+        and initializes internal data structures for actions, monitored widgets, and enhanced combo boxes.
+        """
         self.iface = iface
         self.plugin_dir = os.path.dirname(__file__)
         
-        # Localizzazione
         locale = QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
             self.plugin_dir,
@@ -79,15 +108,28 @@ class ModelerSearchEnhancer:
         self.enhanced_combos = set()
         
     def tr(self, message):
-        """Traduzione stringhe."""
+        """
+        Translates the given message string using QGIS's translation system.
+        Args:
+            message (str): The message string to be translated.
+        Returns:
+            str: The translated string.
+        """
         return QCoreApplication.translate('ModelerSearchEnhancer', message)
 
     def initGui(self):
-        """Inizializza il plugin."""        
-        # Avvia il monitoring delle finestre
+        """
+        Initializes the plugin's GUI elements and actions.
+        This method sets up monitoring for the modeler, creates the main and help actions
+        with their respective icons, tooltips, and triggers, and adds them to the QGIS
+        plugin menu and toolbar. The actions are also appended to the plugin's actions list.
+        Args:
+            None
+        Returns:
+            None
+        """
         self.setupModelerMonitoring()
         
-        # Crea azione principale del plugin
         icon_path = ':/plugins/modeler_search_enhancer/icon.png'
         self.main_action = QAction(
             QIcon(icon_path),
@@ -95,10 +137,9 @@ class ModelerSearchEnhancer:
             self.iface.mainWindow()
         )
         self.main_action.setStatusTip(self.tr(u'Enhanced search for Modeler algorithm inputs/outputs'))
-        self.main_action.setEnabled(False)  # Disabilitata perché lavora automaticamente
+        self.main_action.setEnabled(False)
         self.main_action.triggered.connect(self.showPluginInfo)
         
-        # Crea azione Help
         self.help_action = QAction(
             QIcon(':/images/themes/default/mActionHelpContents.svg'),
             self.tr(u'Help'),
@@ -107,7 +148,6 @@ class ModelerSearchEnhancer:
         self.help_action.setStatusTip(self.tr(u'Show plugin documentation'))
         self.help_action.triggered.connect(self.showHelp)
         
-        # Aggiungi al menu
         self.iface.addPluginToMenu(
             self.tr(u'&Modeler Search Enhancer'),
             self.main_action
@@ -117,16 +157,19 @@ class ModelerSearchEnhancer:
             self.help_action
         )
         
-        # Aggiungi alla toolbar (solo l'azione principale)
         self.iface.addToolBarIcon(self.main_action)
         
         self.actions.append(self.main_action)
         self.actions.append(self.help_action)
 
     def showPluginInfo(self):
-        """Mostra informazioni sul plugin"""
-        from qgis.PyQt.QtWidgets import QMessageBox
-        
+        """
+        Displays an information message box with details about the Modeler Search Enhancer plugin.
+        Args:
+            self: The instance of the plugin class, which should have access to the QGIS interface via self.iface.
+        Returns:
+            None
+        """
         QMessageBox.information(
             self.iface.mainWindow(),
             "Modeler Search Enhancer",
@@ -140,23 +183,21 @@ class ModelerSearchEnhancer:
         )
 
     def showHelp(self):
-        """Mostra la documentazione del plugin"""
-        import os
-        import webbrowser
-        from qgis.PyQt.QtCore import QUrl
-        from qgis.PyQt.QtGui import QDesktopServices
-        
-        # Percorso del file di help
+        """
+        Displays the help documentation for the plugin.
+        This method attempts to open a local 'help.html' file located in the plugin directory.
+        If the file exists, it is opened in the default web browser. If not, a warning message is shown to the user.
+        Args:
+            None
+        Returns:
+            None
+        """
         help_file = os.path.join(self.plugin_dir, 'help.html')
         
-        # Verifica se il file esiste
         if os.path.exists(help_file):
-            # Apri il file HTML nel browser predefinito
             help_url = QUrl.fromLocalFile(help_file)
             QDesktopServices.openUrl(help_url)
         else:
-            # Se il file non esiste, mostra un messaggio di errore
-            from qgis.PyQt.QtWidgets import QMessageBox
             QMessageBox.warning(
                 self.iface.mainWindow(),
                 "Help File Not Found",
@@ -165,13 +206,30 @@ class ModelerSearchEnhancer:
             )
 
     def setupModelerMonitoring(self):
-        """Configura il monitoring delle finestre del Modeler"""
+        """
+        Sets up a QTimer to periodically check for modeler widgets in the QGIS interface.
+        This method initializes a QTimer instance, connects its timeout signal to the
+        checkForModelerWidgets method, and starts the timer with a 500 ms interval.
+        Args:
+            None
+        Returns:
+            None
+        """
         self.window_timer = QTimer()
         self.window_timer.timeout.connect(self.checkForModelerWidgets)
-        self.window_timer.start(500)  # Controlla ogni mezzo secondo
+        self.window_timer.start(500)
 
     def checkForModelerWidgets(self):
-        """Controlla i widget del Modeler"""
+        """
+        Checks for currently visible Modeler widgets in the QGIS application, enhances any new ones found,
+        and updates the set of monitored widgets.
+        Iterates through all widgets in the application, identifies those that are Modeler widgets and visible,
+        enhances any that are not already being monitored, and updates the internal set of monitored widgets.
+        Args:
+            None
+        Returns:
+            None
+        """
         current_widgets = set()
         
         for widget in QgsApplication.allWidgets():
@@ -179,14 +237,19 @@ class ModelerSearchEnhancer:
                 if self.isModelerWidget(widget):
                     current_widgets.add(widget)
                     
-                    # Se è un nuovo widget, miglioralo
                     if widget not in self.monitored_widgets:
                         self.enhanceModelerWidget(widget)
         
         self.monitored_widgets = current_widgets
 
     def isModelerWidget(self, widget):
-        """Identifica i widget del Modeler"""
+        """
+        Determines whether the given widget is a "Modeler" widget based on its properties.
+        Args:
+            widget (QWidget): The widget to check.
+        Returns:
+            bool: True if the widget is identified as a Modeler widget, False otherwise.
+        """
         if not widget:
             return False
             
@@ -194,7 +257,6 @@ class ModelerSearchEnhancer:
             window_title = getattr(widget, 'windowTitle', lambda: '')().lower()
             object_name = getattr(widget, 'objectName', lambda: '')().lower()
             
-            # Cerca finestre del Modeler con ComboBox
             modeler_indicators = [
                 ('tabella' in window_title or 'selezione' in window_title) and len(widget.findChildren(QComboBox)) > 0,
                 'modeler' in object_name and len(widget.findChildren(QComboBox)) > 0,
@@ -207,9 +269,15 @@ class ModelerSearchEnhancer:
             return False
 
     def enhanceModelerWidget(self, widget):
-        """Migliora un widget del Modeler"""
+        """
+        Enhances all QComboBox widgets within the given widget by adding search functionality,
+        if they meet certain criteria and have not already been enhanced.
+        Args:
+            widget (QWidget): The parent widget containing QComboBox children to enhance.
+        Returns:
+            None
+        """
         try:
-            # Trova tutti i ComboBox
             combo_boxes = widget.findChildren(QComboBox)
             
             for combo_box in combo_boxes:
@@ -223,73 +291,67 @@ class ModelerSearchEnhancer:
                     combo_box._search_enhanced = True
                     
         except Exception as e:
-            print(f"Errore nel miglioramento widget: {e}")
+            pass
 
     def shouldEnhanceComboBox(self, combo_box):
-        """Determina se un ComboBox dovrebbe essere migliorato con ricerca"""
+        """
+        Determines whether a given QComboBox should be enhanced based on its items and context.
+        Args:
+            combo_box (QComboBox): The combo box widget to analyze.
+        Returns:
+            bool: True if the combo box meets the criteria for enhancement, False otherwise.
+        The method analyzes the contents of the combo box and its parent context to decide if it is likely
+        to represent a modeler input or output, and excludes cases where the combo box is too simple or irrelevant.
+        """
         try:
-            # Controlla il contenuto per identificare se sono input/output del Modeler
             if combo_box.count() == 0:
                 return False
             
-            # Prendi alcuni elementi di esempio per analizzare il contenuto
             sample_items = []
             for i in range(min(3, combo_box.count())):
                 item_text = combo_box.itemText(i)
                 if item_text:
                     sample_items.append(item_text.lower())
             
-            print(f"Analizzando ComboBox con {combo_box.count()} elementi")
-            print(f"Primi elementi: {sample_items}")
-            
-            # Criteri per identificare ComboBox di input/output del Modeler
             modeler_input_indicators = [
-                # Cerca pattern tipici degli output del Modeler
-                any('"' in item for item in sample_items),  # Gli output hanno spesso virgolette
-                any('dall\'algoritmo' in item for item in sample_items),  # Testo italiano tipico
-                any('from algorithm' in item for item in sample_items),  # Testo inglese tipico
-                any('output' in item for item in sample_items),  # Contiene "output"
-                any('result' in item for item in sample_items),  # Contiene "result"
+                any('"' in item for item in sample_items),
+                any('dall\'algoritmo' in item for item in sample_items),
+                any('from algorithm' in item for item in sample_items),
+                any('output' in item for item in sample_items),
+                any('result' in item for item in sample_items),
                 any('estratto' in item or 'elementi' in item or 'risultato' in item for item in sample_items),
             ]
             
-            # Criteri per ESCLUDERE ComboBox che NON dovrebbero essere migliorati
             exclude_indicators = [
-                # Escludi ComboBox con pochi elementi (probabilmente dropdown di configurazione)
                 combo_box.count() < 3,
-                # Escludi se contiene solo valori numerici o di configurazione
                 all(item.isdigit() or item in ['true', 'false', 'yes', 'no'] for item in sample_items if item),
-                # Escludi se gli elementi sono molto corti (probabilmente configurazioni)
                 all(len(item) < 10 for item in sample_items if item),
-                # Escludi ComboBox di dipendenze (spesso vuoti o con pochi elementi standard)
                 combo_box.count() == 1 and sample_items and ('dipendenze' in sample_items[0] or 'dependencies' in sample_items[0]),
             ]
             
-            # Analizza il parent per contesto aggiuntivo
             parent_context = self.analyzeParentContext(combo_box)
             
             should_enhance = any(modeler_input_indicators) and not any(exclude_indicators) and parent_context
             
-            print(f"Decisione: {'MIGLIORA' if should_enhance else 'SALTA'} questo ComboBox")
-            print(f"Indicatori modeler: {modeler_input_indicators}")
-            print(f"Indicatori esclusione: {exclude_indicators}")
-            print(f"Contesto parent: {parent_context}")
-            print("---")
-            
             return should_enhance
             
         except Exception as e:
-            print(f"Errore nell'analisi ComboBox: {e}")
             return False
 
     def analyzeParentContext(self, combo_box):
-        """Analizza il contesto del parent per determinare se è un campo di input"""
+        """
+        Analyzes the parent context of a given combo box to determine if it is related to input selection.
+        Args:
+            combo_box (QComboBox): The combo box whose parent context is to be analyzed.
+        Returns:
+            bool: True if the parent context suggests an input selection (based on label keywords), 
+                  False if it matches any exclusion keywords or has no parent.
+        """
         try:
             parent = combo_box.parent()
             if not parent:
                 return False
             
-            # Cerca label o testi vicini che indicano che è un campo di input
             labels = parent.findChildren(QLabel)
             
             input_context_keywords = [
@@ -307,71 +369,72 @@ class ModelerSearchEnhancer:
             for label in labels:
                 label_text = label.text().lower()
                 
-                # Se trova keyword di esclusione nel contesto, non migliorare
                 if any(keyword in label_text for keyword in exclude_context_keywords):
                     return False
                     
-                # Se trova keyword di input nel contesto, migliorare
                 if any(keyword in label_text for keyword in input_context_keywords):
                     return True
             
-            return True  # Default: migliora se non trova indicatori negativi
+            return True
             
-        except Exception as e:
-            print(f"Errore nell'analisi contesto: {e}")
+        except Exception:
             return True
 
     def enhanceComboBox(self, combo_box):
-        """Migliora un ComboBox rendendolo ricercabile"""
+        """
+        Enhances a given QComboBox with advanced search and filtering capabilities.
+        This method makes the combo box editable, adds a placeholder, and attaches a QCompleter
+        that allows users to filter items by typing. The filtering is case-insensitive and matches
+        all search terms. The method also synchronizes the selection between the combo box and the
+        completer, and applies custom styling to the line edit.
+        Args:
+            combo_box (QComboBox): The combo box widget to enhance.
+        Returns:
+            bool: True if the enhancement was successful, False otherwise.
+        """
         try:
-            # Salva gli elementi esistenti
             original_items = []
             for i in range(combo_box.count()):
                 original_items.append(combo_box.itemText(i))
             
-            print(f"Elementi originali: {len(original_items)}")
-            
-            # Rendi il combo editabile se non lo è già
             if not combo_box.isEditable():
                 combo_box.setEditable(True)
             
-            # Configura il line edit
             line_edit = combo_box.lineEdit()
             if line_edit:
-                # Imposta placeholder
                 line_edit.setPlaceholderText("🔍 Digita per filtrare...")
                 
-                # Variabili di controllo per PREVENIRE LOOP
                 self._is_updating = False
                 self._last_search_text = ""
                 
-                # Crea un completer SEMPLICE senza modificare il combo
                 completer = QCompleter(original_items)
                 completer.setCaseSensitivity(Qt.CaseInsensitive)
                 completer.setFilterMode(Qt.MatchContains)
                 completer.setCompletionMode(QCompleter.PopupCompletion)
                 
-                # Imposta il completer
                 line_edit.setCompleter(completer)
                 
-                # Funzione di filtro SICURA senza modificare il combo
                 def safe_filter():
-                    # CONTROLLO ANTI-LOOP
+                    """
+                    Filters the items in the completer based on the current text in the line edit.
+                    Updates the completer's model to show only items that match all search terms entered by the user.
+                    If the search text is empty, restores the original list of items.
+                    Args:
+                        None
+                    Returns:
+                        None
+                    """
                     if self._is_updating:
                         return
                         
                     current_text = line_edit.text().strip()
                     
-                    # Se il testo non è cambiato, non fare nulla
                     if current_text == self._last_search_text:
                         return
                         
                     self._last_search_text = current_text
                     
-                    print(f"Filtro sicuro: '{current_text}'")
-                    
                     if current_text:
-                        # Filtra SOLO per il completer, NON modificare il combo
                         filtered_items = []
                         search_terms = current_text.lower().split()
                         
@@ -380,70 +443,76 @@ class ModelerSearchEnhancer:
                             if all(term in item_lower for term in search_terms):
                                 filtered_items.append(item)
                         
-                        print(f"Trovati {len(filtered_items)} risultati")
-                        
-                        # Aggiorna SOLO il modello del completer
                         if filtered_items:
                             completer_model = QStringListModel(filtered_items)
                             completer.setModel(completer_model)
                             
-                            # Mostra il popup del completer
                             if not completer.popup().isVisible():
                                 completer.complete()
                         else:
-                            # Nessun risultato, nascondi popup
                             completer.popup().hide()
                     else:
-                        # Testo vuoto, ripristina completer originale
                         completer_model = QStringListModel(original_items)
                         completer.setModel(completer_model)
                 
-                # Connetti il filtro SOLO a editingFinished per evitare loop
                 line_edit.editingFinished.connect(safe_filter)
                 
-                # Timer per filtro con delay (per evitare troppi aggiornamenti)
-                from qgis.PyQt.QtCore import QTimer
                 self._filter_timer = QTimer()
                 self._filter_timer.setSingleShot(True)
                 self._filter_timer.timeout.connect(safe_filter)
                 
                 def on_text_changed():
-                    # NON chiamare direttamente il filtro, usa il timer
+                    """
+                    Triggered when the text changes in the associated widget. If an update is not already in progress,
+                    starts a timer to delay filtering by 300 milliseconds.
+                    Args:
+                        None
+                    Returns:
+                        None
+                    """
                     if not self._is_updating:
-                        self._filter_timer.start(300)  # 300ms delay
+                        self._filter_timer.start(300)
                 
                 line_edit.textChanged.connect(on_text_changed)
                 
-                # Gestisci la selezione dal completer
                 def on_completer_activated(text):
-                    print(f"Selezionato dal completer: '{text}'")
+                    """
+                    Handles the event when an item is selected from the completer dropdown.
+                    Args:
+                        text (str): The text selected from the completer.
+                    Returns:
+                        None
+                    """
                     if text in original_items:
-                        self._is_updating = True  # PREVIENI LOOP
+                        self._is_updating = True
                         
                         index = original_items.index(text)
                         combo_box.setCurrentIndex(index)
                         line_edit.setText(text)
                         
-                        self._is_updating = False  # FINE AGGIORNAMENTO
+                        self._is_updating = False
                 
                 completer.activated.connect(on_completer_activated)
                 
-                # Gestisci la selezione diretta dal combo
                 def on_combo_activated(index):
-                    if self._is_updating:  # PREVIENI LOOP
+                    """
+                    Handles the activation event of the combo box, updating the associated line edit with the selected item's text.
+                    Args:
+                        index (int): The index of the activated item in the combo box.
+                    Returns:
+                        None
+                    """
+                    if self._is_updating:
                         return
                         
                     if 0 <= index < combo_box.count():
                         selected_text = combo_box.itemText(index)
-                        print(f"Selezionato dal combo: '{selected_text}'")
-                        
-                        self._is_updating = True  # PREVIENI LOOP
+                        self._is_updating = True
                         line_edit.setText(selected_text)
-                        self._is_updating = False  # FINE AGGIORNAMENTO
+                        self._is_updating = False
                 
                 combo_box.activated.connect(on_combo_activated)
                 
-                # Stile per indicare che è ricercabile
                 line_edit.setStyleSheet("""
                     QLineEdit {
                         background-color: #f0f8f0;
@@ -457,32 +526,31 @@ class ModelerSearchEnhancer:
                     }
                 """)
                 
-                # Politica di inserimento
                 combo_box.setInsertPolicy(QComboBox.NoInsert)
                 
-                print(f"Migliorato ComboBox ANTI-LOOP - {len(original_items)} elementi")
                 return True
                 
         except Exception as e:
-            print(f"Errore nel miglioramento ComboBox: {e}")
             return False
 
     def unload(self):
-        """Rimuove il plugin."""
-        # Ferma il timer
+        """
+        Unloads the plugin by stopping timers, clearing internal data structures, and removing plugin actions from the QGIS interface.
+        Args:
+            None
+        Returns:
+            None
+        """
         if hasattr(self, 'window_timer'):
             self.window_timer.stop()
             
-        # Pulisci i riferimenti
         self.enhanced_combos.clear()
         self.monitored_widgets.clear()
             
-        # Rimuovi azioni dal menu e toolbar
         for action in self.actions:
             self.iface.removePluginMenu(
                 self.tr(u'&Modeler Search Enhancer'),
                 action)
             
-            # Rimuovi dalla toolbar solo se è l'azione principale
             if action == getattr(self, 'main_action', None):
                 self.iface.removeToolBarIcon(action)
