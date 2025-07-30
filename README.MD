@@ -4,7 +4,7 @@
 
 ![QGIS Plugin](https://img.shields.io/badge/QGIS-Plugin-green)
 ![Version](https://img.shields.io/badge/version-1.0-blue)
-![License](https://img.shields.io/badge/license-GPL--3.0-orange)
+![License](https://img.shields.io/badge/license-GPL--2.0-orange)
 
 ## 📖 Overview
 
