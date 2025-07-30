@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/modeler_search_enhancer" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Modeler Search Enhancer Plugin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2E8B57;
+            border-bottom: 3px solid #2E8B57;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #4682B4;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        .highlight {
+            background-color: #E8F5E8;
+            padding: 15px;
+            border-left: 4px solid #2E8B57;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .feature-list {
+            background-color: #f0f8f0;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .step {
+            background-color: #f0f8ff;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 3px solid #4682B4;
+        }
+        .icon {
+            font-size: 24px;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .search-demo {
+            background-color: #f8f9fa;
+            border: 2px dashed #2E8B57;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+            border-radius: 8px;
+        }
+        .version-info {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #6c757d;
+            text-align: center;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="icon">🔍</span>Modeler Search Enhancer Plugin</h1>
+        
+        <div class="highlight">
+            <strong>The Modeler Search Enhancer plugin provides advanced search functionality for QGIS Processing Modeler algorithm inputs and outputs. It enhances ComboBox fields with intelligent filtering capabilities to help you quickly find the algorithm outputs you need.</strong>
+        </div>
+
+        <h2><span class="icon">🎯</span>What does this plugin do?</h2>
+        
+        <div class="feature-list">
+            <h3>Key Features:</h3>
+            <ul>
+                <li><strong>🔍 Smart Search</strong> - Adds intelligent search capabilities to Modeler input/output ComboBoxes</li>
+                <li><strong>⚡ Real-time Filtering</strong> - Filters results as you type</li>
+                <li><strong>🎯 Intelligent Detection</strong> - Only enhances relevant ComboBoxes (algorithm inputs/outputs)</li>
+                <li><strong>🚫 Non-intrusive</strong> - Ignores configuration and dependency ComboBoxes</li>
+                <li><strong>🔤 Case-insensitive</strong> - Search works regardless of capitalization</li>
+                <li><strong>📝 Multi-term Search</strong> - Search for multiple words simultaneously</li>
+            </ul>
+        </div>
+
+        <h2><span class="icon">🚀</span>How to use the plugin</h2>
+
+        <div class="step">
+            <strong>Step 1:</strong> Open the QGIS Processing Modeler
+        </div>
+
+        <div class="step">
+            <strong>Step 2:</strong> Create or open a model with multiple algorithms
+        </div>
+
+        <div class="step">
+            <strong>Step 3:</strong> When adding a new algorithm, click on any input ComboBox that contains algorithm outputs
+        </div>
+
+        <div class="step">
+            <strong>Step 4:</strong> You'll notice the ComboBox now has:
+            <ul>
+                <li>🟢 Green border indicating it's searchable</li>
+                <li>🔍 Search placeholder text</li>
+                <li>✨ Enhanced filtering capabilities</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <strong>Step 5:</strong> Start typing to filter the available options!
+        </div>
+
+        <div class="search-demo">
+            <h3>🔍 Search Example</h3>
+            <p>Type <code>"buffer"</code> to find all algorithm outputs containing "buffer"</p>
+            <p>Type <code>"clip merge"</code> to find outputs containing both "clip" AND "merge"</p>
+        </div>
+
+        <h2><span class="icon">⚙️</span>How it works</h2>
+
+        <p>The plugin automatically:</p>
+        <ol>
+            <li><strong>Monitors</strong> - Continuously monitors for open Modeler windows</li>
+            <li><strong>Analyzes</strong> - Identifies ComboBoxes that contain algorithm outputs</li>
+            <li><strong>Enhances</strong> - Adds search functionality only to relevant ComboBoxes</li>
+            <li><strong>Filters</strong> - Provides real-time filtering based on your input</li>
+        </ol>
+
+        <div class="warning">
+            <strong>⚠️ Note:</strong> The plugin only enhances ComboBoxes that contain algorithm outputs (like "Result from buffer operation"). It intelligently ignores configuration ComboBoxes such as "Dependencies", parameter dropdowns, and other non-algorithm-output fields.
+        </div>
+
+        <h2><span class="icon">🎨</span>Visual Indicators</h2>
+
+        <ul>
+            <li><strong>🟢 Green Border:</strong> Indicates a ComboBox has been enhanced with search</li>
+            <li><strong>🔍 Placeholder Text:</strong> Shows "🔍 Type to filter..." in enhanced ComboBoxes</li>
+            <li><strong>💡 Light Green Background:</strong> Enhanced ComboBoxes have a subtle green background</li>
+        </ul>
+
+        <h2><span class="icon">🔧</span>Search Capabilities</h2>
+
+        <div class="feature-list">
+            <h3>Search Features:</h3>
+            <ul>
+                <li><strong>Partial Matching:</strong> Search finds text anywhere in the algorithm name</li>
+                <li><strong>Multi-word Search:</strong> Space-separated terms must all be present</li>
+                <li><strong>Case Insensitive:</strong> "BUFFER", "buffer", and "Buffer" all work the same</li>
+                <li><strong>Auto-completion:</strong> Popup shows filtered results as you type</li>
+                <li><strong>Smart Selection:</strong> Click any result to select it</li>
+            </ul>
+        </div>
+
+        <h2><span class="icon">🛠️</span>Technical Details</h2>
+
+        <p>The plugin uses advanced Qt widget analysis to:</p>
+        <ul>
+            <li>Identify Modeler dialog windows</li>
+            <li>Analyze ComboBox content to determine if they contain algorithm outputs</li>
+            <li>Apply search enhancements only where appropriate</li>
+            <li>Maintain compatibility with existing Modeler functionality</li>
+        </ul>
+
+        <h2><span class="icon">❓</span>Troubleshooting</h2>
+
+        <div class="warning">
+            <p><strong>If the search doesn't appear:</strong></p>
+            <ul>
+                <li>Make sure you're in a Modeler window with algorithm inputs/outputs</li>
+                <li>Check that the ComboBox contains algorithm outputs (not just configuration options)</li>
+                <li>Restart QGIS if the plugin seems unresponsive</li>
+            </ul>
+        </div>
+
+        <h2><span class="icon">📞</span>Support</h2>
+
+        <p>This plugin enhances your QGIS Modeler workflow by making it easier to find and select algorithm outputs when building complex models. It's particularly useful when working with models that have many algorithms and outputs.</p>
+
+        <div class="highlight">
+            <strong>💡 Tip:</strong> The more algorithms in your model, the more useful this plugin becomes! It's designed to scale with model complexity.
+        </div>
+
+        <div class="version-info">
+            <p><strong>Modeler Search Enhancer Plugin</strong><br>
+            Version 1.0 | Compatible with QGIS >= 3.28.9<br>
+            Developed by GIS Team | gis@eagleprojects.it</p>
+        </div>
+    </div>
+</body>
+</html>
