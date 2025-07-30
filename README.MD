@@ -179,7 +179,7 @@ We welcome contributions! Please follow these guidelines:
 
 ## 📄 License
 
-This project is licensed under the **GNU General Public License v2.0** - see the [LICENSE](LICENSE) file for details.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as by the Free Software Foundation, either version 2 of the License, or (at your option) any later version. <br><br>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. <br><br>You should have received a copy of the GNU General Public License along with this program. - see the [LICENSE](LICENSE) file for details.
 
 ### License Summary
 - ✅ **Use** - Commercial and private use allowed
@@ -207,13 +207,6 @@ When reporting bugs, please include:
 - **Expected vs actual behavior**
 - **Screenshots** if applicable
 - **Error messages** from QGIS log
-
-## 🏆 Acknowledgments
-
-- **QGIS Development Team** - For the amazing QGIS platform
-- **Qt Framework** - For the powerful GUI framework
-- **Python Community** - For the excellent Python ecosystem
-- **Users & Testers** - For feedback and bug reports
 
 ---
 
