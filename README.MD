@@ -3,7 +3,7 @@
 **Advanced search functionality for QGIS Processing Modeler algorithm inputs and outputs**
 
 ![QGIS Plugin](https://img.shields.io/badge/QGIS-Plugin-green)
-![Version](https://img.shields.io/badge/version-1.0-blue)
+![Version](https://img.shields.io/badge/version-1.2-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0-orange)
 
 ## 📖 Overview
