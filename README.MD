@@ -179,12 +179,7 @@ We welcome contributions! Please follow these guidelines:
 
 ## 📄 License
 
-This project is licensed under the **GNU General Public License v3.0** - see the [LICENSE](LICENSE) file for details.
-
-```
-Copyright (C) 2025 GIS Team
-Email: gis@eagleprojects.it
-```
+This project is licensed under the **GNU General Public License v2.0** - see the [LICENSE](LICENSE) file for details.
 
 ### License Summary
 - ✅ **Use** - Commercial and private use allowed
