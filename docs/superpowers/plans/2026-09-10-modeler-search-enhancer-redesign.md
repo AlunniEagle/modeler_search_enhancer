@@ -1261,7 +1261,13 @@ Aggiungi questi due metodi a `ComboSearchController`, dopo `select_text`:
     def detach(self):
         """Riporta il combo allo stato in cui era prima di `attach`."""
         combo = self._combo
-        self._timer.stop()
+        # Il timer è figlio Qt del controller, che a sua volta è figlio del
+        # combo: se il combo è stato distrutto, il timer lo è con lui e
+        # `stop()` solleverebbe `RuntimeError`. Verificato su Qt5 e Qt6.
+        # Si usa la stessa primitiva `is_alive` del resto del progetto,
+        # invece di aggiungere un altro `try/except` da inghiottire.
+        if is_alive(self._timer):
+            self._timer.stop()
         if not is_alive(combo):
             self._completer = None
             return
