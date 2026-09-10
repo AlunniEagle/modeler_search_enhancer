@@ -1,0 +1,9 @@
+# Python
+__pycache__/
+*.pyc
+
+# Claude Code (impostazioni locali, non portabili)
+.claude/settings.local.json
+
+# Artefatti di pacchettizzazione del plugin
+*.zip
