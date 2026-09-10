@@ -23,7 +23,13 @@ class ComboSearchController(QObject):
     def __init__(self, combo):
         super().__init__(combo)
         self._combo = combo
+        # Guardia di rientranza: la impostano `select_text` e
+        # `reconcile_text`, che scrivono nel line edit e non devono
+        # rilanciare il filtro su una modifica generata da noi stessi.
         self._updating = False
+        # Stato originale del combo, da restituire in `detach()`: il
+        # plugin non deve lasciare i widget di QGIS alterati quando viene
+        # disattivato.
         self._was_editable = combo.isEditable()
         self._original_insert_policy = combo.insertPolicy()
         self._model = QStringListModel(self)
@@ -72,8 +78,23 @@ class ComboSearchController(QObject):
         return [combo.itemText(i) for i in range(combo.count())]
 
     def current_candidates(self):
-        """Le voci attualmente offerte dal completer."""
-        return list(self._model.stringList())
+        """Le voci che il popup del completer mostra davvero all'utente.
+
+        Legge il `completionModel()`, non il modello sorgente. La
+        distinzione è sostanziale: il `QCompleter` applica un **proprio**
+        filtro `MatchContains` usando `completionPrefix`, che Qt
+        sincronizza da sé con l'intero testo digitato, sopra al modello che
+        gli passiamo. Un metodo che leggesse il modello sorgente
+        riporterebbe voci che l'utente non vede, e nasconderebbe ai test
+        proprio le divergenze fra il nostro filtro e quello di Qt.
+        """
+        if self._completer is None:
+            return []
+        modello = self._completer.completionModel()
+        return [
+            modello.data(modello.index(riga, 0))
+            for riga in range(modello.rowCount())
+        ]
 
     # --- filtro ---------------------------------------------------------
 
@@ -101,6 +122,15 @@ class ComboSearchController(QObject):
                 if all(termine in voce.lower() for termine in termini)
             ]
         self._model.setStringList(items)
+        # Azzerare il prefisso è indispensabile, non cosmetico. Qt
+        # sincronizza `completionPrefix` con l'intero testo digitato, e il
+        # completer lo riapplica come sottostringa sopra al nostro modello
+        # già filtrato. Senza questo azzeramento una query multi-termine in
+        # ordine invertito — "nuovi edifici" per la voce "Edifici nuovi" —
+        # passa il nostro filtro e viene poi scartata da quello di Qt: il
+        # popup resta vuoto. Verificato con digitazione reale, tasto per
+        # tasto, su QGIS 3.40.2.
+        self._completer.setCompletionPrefix("")
 
     # --- presentazione ---------------------------------------------------
 

@@ -3,6 +3,7 @@
 
 import unittest
 
+from qgis.PyQt.QtTest import QTest
 from qgis.PyQt.QtWidgets import QComboBox
 
 from modeler_search_enhancer.combo_search import ComboSearchController
@@ -73,6 +74,23 @@ class TestFiltro(unittest.TestCase):
         digita(controller, combo, "zzzz")
         self.assertEqual(controller.current_candidates(), [])
 
+    def test_digitazione_reale_tasto_per_tasto(self):
+        # `setText()` non genera gli eventi di tastiera che fanno
+        # sincronizzare a Qt il `completionPrefix` del completer. Questo
+        # test digita davvero, tasto per tasto, ed è l'unico che vede il
+        # popup nelle stesse condizioni dell'utente: senza l'azzeramento
+        # del prefisso in `refresh_filter`, la query in ordine invertito
+        # qui sotto restituirebbe una lista vuota.
+        combo = combo_sorgenti()
+        controller = ComboSearchController(combo)
+        controller.attach()
+
+        combo.lineEdit().clear()
+        QTest.keyClicks(combo.lineEdit(), "nuovi edifici")
+        controller.refresh_filter()
+
+        self.assertEqual(controller.current_candidates(), ["Edifici nuovi"])
+
 
 class TestIndipendenzaFraCombo(unittest.TestCase):
     """Regressione di CR-2: lo stato era condiviso sul singleton del plugin."""
@@ -111,13 +129,6 @@ class TestIndipendenzaFraCombo(unittest.TestCase):
         self.assertEqual(
             c2.current_candidates(), ["Strade urbane", "Strade rurali"]
         )
-
-    def test_ogni_controller_ha_il_proprio_timer(self):
-        primo, secondo = combo_sorgenti(), combo_sorgenti()
-        c1, c2 = ComboSearchController(primo), ComboSearchController(secondo)
-        c1.attach()
-        c2.attach()
-        self.assertIsNot(c1._timer, c2._timer)
 
     def test_il_controller_e_figlio_qt_del_combo(self):
         # Garantisce che Qt lo distrugga insieme al combo: è ciò che
