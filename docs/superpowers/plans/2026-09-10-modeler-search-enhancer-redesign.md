@@ -2070,8 +2070,60 @@ git commit -m "test: ciclo di vita end-to-end del plugin; versione 2.0"
 **Files:**
 - Modify: `help.html`
 - Modify: `README.MD`
+- Modify: `metadata.txt`
+- Modify: `tests/test_integrazione.py`
 
 **Interfaces:** nessuna.
+
+Oltre ad aggiornare aiuto e readme, questo task chiude due rilievi emersi nella revisione del Task 9 e un difetto di lingua introdotto dal piano.
+
+- [ ] **Step 0a: Portare in inglese la voce di changelog 2.0**
+
+Il resto di `metadata.txt` — `name`, `description`, `about` e le voci storiche `1.2`, `1.1`, `1.0` — è in inglese, ed è testo pubblico sul repository dei plugin QGIS. La voce 2.0 scritta in italiano sarebbe l'unica illeggibile per un utente non italofono, proprio quella che descrive la risoluzione del crash. La versione inglese elimina anche l'unica parola accentata, resa nel testo italiano con un apostrofo (`compatibilita'`) incoerente col resto del progetto.
+
+Sostituisci il blocco della voce 2.0 con:
+
+```
+changelog=2.0
+        - Fixed the QGIS crash caused by the polling-based window detection
+        - Detection is now event-driven and scoped to the single Modeler window
+        - Fixed the filter that only applied to one field at a time
+        - Fixed the selection that could wire the wrong source into the model
+        - Detection no longer depends on the interface language
+        - Full Qt6 and QGIS 4.0 compatibility
+        - Search field styling stays readable with dark themes
+        - Added an automated test suite
+        1.2
+```
+
+Lascia invariate tutte le righe successive del changelog.
+
+- [ ] **Step 0b: Rafforzare il test dei due cicli**
+
+`test_due_cicli_initgui_unload_non_sollevano` in `tests/test_integrazione.py` non contiene asserzioni: può fallire solo per eccezione. Un secondo `initGui()` che duplicasse la voce di menu passerebbe inosservato. Sostituisci il metodo con:
+
+```python
+    def test_due_cicli_initgui_unload_non_sollevano(self):
+        # Senza asserzioni sullo stato, un secondo `initGui()` che
+        # duplicasse la voce di menu passerebbe inosservato.
+        self.plugin.initGui()
+        self.assertEqual(len(self.iface.voci), 1)
+        self.plugin.unload()
+        self.assertEqual(len(self.iface.voci), 0)
+
+        self.plugin.initGui()
+        self.assertEqual(len(self.iface.voci), 1)
+        self.plugin.unload()
+        self.assertEqual(len(self.iface.voci), 0)
+```
+
+Esegui poi il test di integrazione per confermare che passa ancora:
+
+```bash
+cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.40.2/bin/python-qgis.bat" -m unittest modeler_search_enhancer.tests.test_integrazione -v
+```
+
+Atteso: `Ran 6 tests`, `OK`.
 
 - [ ] **Step 1: Ispezionare lo stato di partenza del diff**
 
@@ -2249,8 +2301,8 @@ Atteso: `Ran 72 tests`, `OK`.
 
 ```bash
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/modeler_search_enhancer"
-git add README.MD help.html
-git commit -m "docs: aggiorna aiuto e readme al comportamento della 2.0"
+git add README.MD help.html metadata.txt tests/test_integrazione.py
+git commit -m "docs: allinea aiuto, readme e changelog alla 2.0"
 ```
 
 ---
