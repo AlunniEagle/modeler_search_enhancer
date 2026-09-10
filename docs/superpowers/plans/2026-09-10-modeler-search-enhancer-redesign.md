@@ -1030,6 +1030,24 @@ class TestRisoluzioneSulComboVivo(unittest.TestCase):
         controller.attach()
         sip.delete(combo)
         self.assertFalse(controller.select_text("Edifici nuovi"))
+
+    def test_il_completer_attivato_seleziona_la_voce(self):
+        # Il segnale `activated` del completer è l'unica via per cui la
+        # scelta fatta nel popup arriva a `select_text`. Senza questo test,
+        # rimuovere il collegamento in `attach()` non farebbe fallire
+        # nulla: il meccanismo resterebbe corretto ma irraggiungibile.
+        #
+        # Il completer si ottiene dall'API pubblica del line edit, senza
+        # toccare attributi privati del controller.
+        combo = combo_sorgenti()
+        controller = ComboSearchController(combo)
+        controller.attach()
+
+        completer = combo.lineEdit().completer()
+        self.assertIsNotNone(completer)
+        completer.activated[str].emit("Edifici nuovi")
+
+        self.assertEqual(combo.currentData(), "EDIFICI_NUOVI")
 ```
 
 - [ ] **Step 2: Eseguire il test per verificare che falli**
@@ -1086,7 +1104,7 @@ Poi, in `attach()`, collega il completer subito dopo averlo creato — inserisci
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.40.2/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 39 tests`, `OK`.
+Atteso: `Ran 40 tests`, `OK`.
 
 - [ ] **Step 5: Commit**
 
@@ -1288,7 +1306,7 @@ Infine, poiché `detach()` azzera `self._completer`, `refresh_filter()` va prote
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.40.2/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 47 tests`, `OK`.
+Atteso: `Ran 48 tests`, `OK`.
 
 - [ ] **Step 5: Commit**
 
@@ -1517,7 +1535,7 @@ class ModelerDialogWatcher(QObject):
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.40.2/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 54 tests`, `OK`.
+Atteso: `Ran 55 tests`, `OK`.
 
 - [ ] **Step 5: Commit**
 
@@ -1803,7 +1821,7 @@ class ModelerSearchEnhancer:
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.40.2/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 65 tests`, `OK`.
+Atteso: `Ran 66 tests`, `OK`.
 
 - [ ] **Step 5: Commit**
 
@@ -1830,7 +1848,7 @@ git commit -m "refactor: guscio del plugin snello, fix del locale, rimozione del
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.40.2/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 65 tests`, `OK`.
+Atteso: `Ran 66 tests`, `OK`.
 
 - [ ] **Step 2: Eseguire la suite completa su QGIS 4.0.0 (Qt6)**
 
@@ -1838,7 +1856,7 @@ Atteso: `Ran 65 tests`, `OK`.
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 4.0.0/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 65 tests`, `OK`. Se compare un `AttributeError` su un enum, è un enum non scoped sfuggito: correggilo e ripeti entrambe le esecuzioni.
+Atteso: `Ran 66 tests`, `OK`. Se compare un `AttributeError` su un enum, è un enum non scoped sfuggito: correggilo e ripeti entrambe le esecuzioni.
 
 - [ ] **Step 3: Eseguire la suite su QGIS 3.34.15, la versione minima dichiarata**
 
@@ -1846,7 +1864,7 @@ Atteso: `Ran 65 tests`, `OK`. Se compare un `AttributeError` su un enum, è un e
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.34.15/bin/python-qgis-ltr.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 65 tests`, `OK`. Questo verifica che `qgisMinimumVersion=3.34` sia una promessa mantenuta.
+Atteso: `Ran 66 tests`, `OK`. Questo verifica che `qgisMinimumVersion=3.34` sia una promessa mantenuta.
 
 - [ ] **Step 4: Aggiornare `metadata.txt`**
 
@@ -2070,7 +2088,7 @@ Atteso: conteggi nell'ordine delle decine di righe, non delle migliaia. Se sono 
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.40.2/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 65 tests`, `OK`.
+Atteso: `Ran 66 tests`, `OK`.
 
 - [ ] **Step 6: Commit**
 
