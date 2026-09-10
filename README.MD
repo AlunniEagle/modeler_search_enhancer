@@ -18,7 +18,7 @@ The **Modeler Search Enhancer** plugin provides intelligent search capabilities 
 - **🚫 Non-intrusive** - Ignores configuration and dependency ComboBoxes
 - **🔤 Case-insensitive** - Search works regardless of capitalization
 - **📝 Multi-term Search** - Search for multiple words simultaneously
-- **🎨 Visual Indicators** - Enhanced ComboBoxes have green borders and search placeholders
+- **🎨 Visual Indicators** - Enhanced ComboBoxes have a highlighted border and search placeholders
 
 ## 🚀 Installation
 
@@ -80,17 +80,17 @@ The plugin operates automatically in the background:
 
 ### Intelligent Detection
 
-The plugin uses advanced analysis to determine which ComboBoxes to enhance:
+Detection is structural rather than text-based, so it behaves the same in every interface language:
 
 #### ✅ **Enhanced ComboBoxes:**
-- Algorithm output selection fields
-- Input layer ComboBoxes with multiple options
-- Fields containing text like `"Result from algorithm"` or `dall'algoritmo`
+- Fields listing the model's own inputs
+- Fields listing outputs of upstream algorithms
+- Only when they hold at least five entries
 
 #### ❌ **Ignored ComboBoxes:**
-- Configuration dropdowns (Dependencies, Parameters)
-- ComboBoxes with few options (< 3 items)
-- Simple value dropdowns (true/false, yes/no)
+- Boolean dropdowns (yes/no)
+- Enumerated parameter dropdowns
+- Anything with fewer than five entries
 
 ## 🛠️ Technical Details
 
