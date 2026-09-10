@@ -22,13 +22,22 @@ class TestFindSourceCombos(unittest.TestCase):
     def test_i_combo_trovati_stanno_sotto_un_parameter_widget(self):
         # L'aggancio strutturale: nessun combo fuori da un
         # QgsProcessingModelerParameterWidget deve essere restituito.
-        widgets = self.dialog.findChildren(QgsProcessingModelerParameterWidget)
-        ammessi = set()
-        for widget in widgets:
-            for combo in widget.findChildren(QComboBox):
-                ammessi.add(id(combo))
-        for combo in find_source_combos(self.dialog):
-            self.assertIn(id(combo), ammessi)
+        #
+        # L'invariante si verifica risalendo la catena degli antenati, non
+        # confrontando `id()` fra due traversate. `id()` qui sarebbe
+        # scorretto: i wrapper Python restituiti da un `findChildren()`
+        # temporaneo vengono deallocati appena la lista esce di scope, e
+        # l'indirizzo che `id()` ha registrato può essere riusato da un
+        # oggetto diverso. Si confronterebbero identità stantie.
+        trovati = find_source_combos(self.dialog)
+        self.assertTrue(trovati)
+        for combo in trovati:
+            antenato = combo.parent()
+            while antenato is not None and not isinstance(
+                antenato, QgsProcessingModelerParameterWidget
+            ):
+                antenato = antenato.parent()
+            self.assertIsInstance(antenato, QgsProcessingModelerParameterWidget)
 
     def test_i_combo_trovati_hanno_itemdata_di_sorgente(self):
         for combo in find_source_combos(self.dialog):
