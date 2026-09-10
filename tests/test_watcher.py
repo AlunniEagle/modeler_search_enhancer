@@ -3,7 +3,7 @@
 
 import unittest
 
-from qgis.PyQt.QtCore import QEvent
+from qgis.PyQt.QtCore import QCoreApplication, QEvent
 from qgis.PyQt.QtWidgets import QApplication, QComboBox, QDialog
 
 from modeler_search_enhancer.dialog_watcher import (
@@ -51,26 +51,36 @@ class TestEventFilter(unittest.TestCase):
     def test_objectname_atteso_e_quello_di_qgis(self):
         self.assertEqual(MODELER_DIALOG_OBJECT_NAME, "ModelerParametersDialog")
 
-    def test_aprire_e_chiudere_piu_dialog_non_accumula_controller(self):
-        # Il difetto originale: enhanced_combos non veniva mai ripulito e
+    def test_i_controller_dei_dialog_chiusi_vengono_potati(self):
+        # Questa è l'altra metà del difetto che il task chiude: la versione
+        # precedente non ripuliva mai il proprio registro di combo e
         # accumulava wrapper di oggetti C++ già distrutti.
+        #
+        # Due accortezze rendono il test non vacuo, entrambe verificate
+        # empiricamente su Qt5 e Qt6:
+        #
+        # - `close()` + `deleteLater()` + `processEvents()` **non**
+        #   distrugge i widget: gli eventi `DeferredDelete` vanno pompati
+        #   esplicitamente. Senza la pompa i controller restano vivi e il
+        #   test non misurerebbe nulla.
+        # - l'asserzione è sullo zero esatto, non su una soglia. Una soglia
+        #   pari al numero di combo per dialog è soddisfatta anche con la
+        #   potatura completamente disattivata.
+        #
+        # Con `_prune()` resa inerte questo test falla al primo giro.
         for _ in range(3):
             dialog = build_dialog()
             dialog.show()
             QApplication.instance().processEvents()
+            self.assertGreater(self.watcher.active_controller_count(), 0)
+
             dialog.close()
             dialog.deleteLater()
             del dialog
+            QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
             QApplication.instance().processEvents()
 
-        ultimo = build_dialog()
-        ultimo.show()
-        QApplication.instance().processEvents()
-        # I controller dei dialog chiusi devono essere stati potati.
-        self.assertLessEqual(
-            self.watcher.active_controller_count(),
-            len(ultimo.findChildren(QComboBox)),
-        )
+            self.assertEqual(self.watcher.active_controller_count(), 0)
 
     def test_enhance_dialog_su_none_non_solleva(self):
         self.assertEqual(self.watcher.enhance_dialog(None), 0)
