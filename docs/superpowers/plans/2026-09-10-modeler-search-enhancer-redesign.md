@@ -1517,13 +1517,19 @@ class TestApiVietate(unittest.TestCase):
         for nome in MODULI:
             self.assertNotIn("allWidgets", sorgente(nome), nome)
 
-    def test_nessun_timer_ricorrente(self):
-        # Sono ammessi solo QTimer.singleShot e i debounce single-shot.
-        for nome in MODULI:
-            testo = sorgente(nome)
-            for riga in testo.splitlines():
-                if ".start(" in riga and "_timer" not in riga:
-                    self.fail("timer sospetto in {}: {}".format(nome, riga.strip()))
+    def test_il_watcher_non_ha_timer_propri(self):
+        # Il polling viveva in un QTimer ricorrente del watcher. Ora il
+        # watcher pianifica solo con QTimer.singleShot, che non si ripete.
+        testo = sorgente("dialog_watcher.py")
+        self.assertIn("QTimer.singleShot", testo)
+        self.assertNotIn(".start(", testo)
+
+    def test_il_debounce_e_single_shot(self):
+        # L'unico timer del plugin è il debounce per combo, e deve essere
+        # single-shot: uno ricorrente ci riporterebbe al polling.
+        testo = sorgente("combo_search.py")
+        self.assertIn("setSingleShot(True)", testo)
+        self.assertEqual(testo.count(".start("), 1)
 
     def test_nessun_enum_non_scoped(self):
         vietati = (
@@ -1546,9 +1552,15 @@ class TestApiVietate(unittest.TestCase):
                 self.assertNotEqual(riga.strip(), "import sip", nome)
 
     def test_nessun_except_silenzioso_generico(self):
+        # `except Exception` seguito dal solo `pass` è ciò che ha nascosto
+        # la rottura su Qt6: le eccezioni inattese devono essere loggate.
+        # Il confronto è su espressione regolare e non su una stringa
+        # letterale, per non dipendere dall'indentazione.
+        import re
+
+        schema = re.compile(r"except\s+Exception[^\n]*:\s*\n\s*pass\b")
         for nome in MODULI:
-            testo = sorgente(nome)
-            self.assertNotIn("except Exception:\n            pass", testo, nome)
+            self.assertIsNone(schema.search(sorgente(nome)), nome)
 
     def test_la_classe_morta_e_stata_rimossa(self):
         self.assertNotIn(
@@ -1734,7 +1746,7 @@ class ModelerSearchEnhancer:
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.40.2/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 64 tests`, `OK`.
+Atteso: `Ran 65 tests`, `OK`.
 
 - [ ] **Step 5: Commit**
 
@@ -1761,7 +1773,7 @@ git commit -m "refactor: guscio del plugin snello, fix del locale, rimozione del
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.40.2/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 64 tests`, `OK`.
+Atteso: `Ran 65 tests`, `OK`.
 
 - [ ] **Step 2: Eseguire la suite completa su QGIS 4.0.0 (Qt6)**
 
@@ -1769,7 +1781,7 @@ Atteso: `Ran 64 tests`, `OK`.
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 4.0.0/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 64 tests`, `OK`. Se compare un `AttributeError` su un enum, è un enum non scoped sfuggito: correggilo e ripeti entrambe le esecuzioni.
+Atteso: `Ran 65 tests`, `OK`. Se compare un `AttributeError` su un enum, è un enum non scoped sfuggito: correggilo e ripeti entrambe le esecuzioni.
 
 - [ ] **Step 3: Eseguire la suite su QGIS 3.34.15, la versione minima dichiarata**
 
@@ -1777,7 +1789,7 @@ Atteso: `Ran 64 tests`, `OK`. Se compare un `AttributeError` su un enum, è un e
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.34.15/bin/python-qgis-ltr.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 64 tests`, `OK`. Questo verifica che `qgisMinimumVersion=3.34` sia una promessa mantenuta.
+Atteso: `Ran 65 tests`, `OK`. Questo verifica che `qgisMinimumVersion=3.34` sia una promessa mantenuta.
 
 - [ ] **Step 4: Aggiornare `metadata.txt`**
 
@@ -2001,7 +2013,7 @@ Atteso: conteggi nell'ordine delle decine di righe, non delle migliaia. Se sono 
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.40.2/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 64 tests`, `OK`.
+Atteso: `Ran 65 tests`, `OK`.
 
 - [ ] **Step 6: Commit**
 
