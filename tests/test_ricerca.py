@@ -218,5 +218,95 @@ class TestRisoluzioneSulComboVivo(unittest.TestCase):
         self.assertEqual(combo.currentData(), "EDIFICI_NUOVI")
 
 
+class TestRiconciliazioneDelTesto(unittest.TestCase):
+    """Il widget non deve mostrare un testo diverso dal valore reale."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = start_qgis()
+
+    def test_testo_libero_viene_ripristinato(self):
+        combo = combo_sorgenti()
+        combo.setCurrentIndex(1)
+        controller = ComboSearchController(combo)
+        controller.attach()
+
+        combo.lineEdit().setText("qualcosa che non esiste")
+        controller.reconcile_text()
+
+        self.assertEqual(combo.lineEdit().text(), "Strade rurali")
+        self.assertEqual(combo.currentData(), "STRADE_RURALI")
+
+    def test_testo_valido_non_viene_toccato(self):
+        # Un testo che corrisponde a una voce reale deve restare com'è.
+        combo = combo_sorgenti()
+        controller = ComboSearchController(combo)
+        controller.attach()
+        combo.lineEdit().setText("Edifici nuovi")
+        controller.reconcile_text()
+        self.assertEqual(combo.lineEdit().text(), "Edifici nuovi")
+
+    def test_riconciliazione_su_combo_distrutto_non_solleva(self):
+        from qgis.PyQt import sip
+        combo = combo_sorgenti()
+        controller = ComboSearchController(combo)
+        controller.attach()
+        sip.delete(combo)
+        controller.reconcile_text()  # non deve sollevare
+
+
+class TestDetach(unittest.TestCase):
+    """unload() deve restituire i combo come li ha trovati."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = start_qgis()
+
+    def test_detach_ripristina_non_editabile(self):
+        combo = combo_sorgenti()
+        self.assertFalse(combo.isEditable())
+        controller = ComboSearchController(combo)
+        controller.attach()
+        self.assertTrue(combo.isEditable())
+
+        controller.detach()
+        self.assertFalse(combo.isEditable())
+
+    def test_detach_ripristina_il_testo_corretto(self):
+        combo = combo_sorgenti()
+        combo.setCurrentIndex(3)
+        controller = ComboSearchController(combo)
+        controller.attach()
+        combo.lineEdit().setText("spazzatura")
+
+        controller.detach()
+        self.assertEqual(combo.currentText(), "Edifici nuovi")
+        self.assertEqual(combo.currentData(), "EDIFICI_NUOVI")
+
+    def test_detach_ripristina_la_insert_policy(self):
+        combo = combo_sorgenti()
+        originale = combo.insertPolicy()
+        controller = ComboSearchController(combo)
+        controller.attach()
+        controller.detach()
+        self.assertEqual(combo.insertPolicy(), originale)
+
+    def test_detach_e_idempotente(self):
+        combo = combo_sorgenti()
+        controller = ComboSearchController(combo)
+        controller.attach()
+        controller.detach()
+        controller.detach()  # non deve sollevare
+        self.assertFalse(combo.isEditable())
+
+    def test_detach_su_combo_distrutto_non_solleva(self):
+        from qgis.PyQt import sip
+        combo = combo_sorgenti()
+        controller = ComboSearchController(combo)
+        controller.attach()
+        sip.delete(combo)
+        controller.detach()  # non deve sollevare
+
+
 if __name__ == "__main__":
     unittest.main()

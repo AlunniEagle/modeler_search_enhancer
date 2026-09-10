@@ -67,6 +67,7 @@ class ComboSearchController(QObject):
         # codice. La versione precedente aveva l'italiano hardcoded.
         line_edit.setPlaceholderText(self.tr(u"\U0001F50D Type to filter..."))
         line_edit.textEdited.connect(self._on_text_edited)
+        line_edit.editingFinished.connect(self.reconcile_text)
         self._apply_search_style()
 
     # --- lettura del combo vivo ----------------------------------------
@@ -108,6 +109,8 @@ class ComboSearchController(QObject):
         """Rifiltra le voci in base al testo corrente del combo."""
         combo = self._combo
         if self._updating or not is_alive(combo):
+            return
+        if self._completer is None:
             return
         line_edit = combo.lineEdit()
         if line_edit is None:
@@ -160,6 +163,62 @@ class ComboSearchController(QObject):
         finally:
             self._updating = False
         return True
+
+    def reconcile_text(self):
+        """Riporta il line edit al valore reale se il testo non è una voce.
+
+        Con `NoInsert`, `currentData()` conserva il valore valido anche
+        mentre il line edit mostra testo libero. Senza questo ripristino il
+        widget mostrerebbe all'utente una stringa diversa da quella che il
+        modello userà davvero.
+        """
+        combo = self._combo
+        if self._updating or not is_alive(combo):
+            return
+        line_edit = combo.lineEdit()
+        if line_edit is None:
+            return
+        if combo.findText(line_edit.text()) >= 0:
+            return
+        self._updating = True
+        try:
+            line_edit.setText(combo.itemText(combo.currentIndex()))
+        finally:
+            self._updating = False
+
+    def detach(self):
+        """Riporta il combo allo stato in cui era prima di `attach`."""
+        combo = self._combo
+        # In teardown il timer potrebbe essere già distrutto se il combo
+        # è stato distrutto: è l'unico caso in cui inghiottire l'eccezione
+        # del timer è corretto.
+        try:
+            self._timer.stop()
+        except RuntimeError:
+            pass
+        if not is_alive(combo):
+            self._completer = None
+            return
+
+        line_edit = combo.lineEdit()
+        if line_edit is not None:
+            # In teardown un disconnect può fallire perché già disconnesso:
+            # è l'unico caso in cui inghiottire l'eccezione è corretto.
+            try:
+                line_edit.textEdited.disconnect(self._on_text_edited)
+            except (TypeError, RuntimeError):
+                pass
+            try:
+                line_edit.editingFinished.disconnect(self.reconcile_text)
+            except (TypeError, RuntimeError):
+                pass
+            line_edit.setCompleter(None)
+            line_edit.setStyleSheet("")
+
+        # setEditable(False) ripristina da sé il testo della voce corrente.
+        combo.setEditable(self._was_editable)
+        combo.setInsertPolicy(self._original_insert_policy)
+        self._completer = None
 
     # --- presentazione ---------------------------------------------------
 
