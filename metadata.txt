@@ -2,7 +2,7 @@
 name=Modeler Search Enhancement
 qgisMinimumVersion=3.34
 description=Advanced search functionality for QGIS Processing Modeler algorithms and parameters
-version=1.2
+version=2.0
 author=GIS Team
 email=gis@eagleprojects.it
 
@@ -12,7 +12,16 @@ tracker=https://github.com/AlunniEagle/modeler_search_enhancer/issues
 repository=https://github.com/AlunniEagle/modeler_search_enhancer
 
 hasProcessingProvider=no
-changelog=1.2
+changelog=2.0
+        - Risolto il crash di QGIS causato dal rilevamento a polling delle finestre
+        - Rilevamento ora event-driven e limitato alla singola finestra del modeler
+        - Corretto il filtro che si applicava a un solo campo per volta
+        - Corretta la selezione che poteva collegare la sorgente sbagliata nel modello
+        - Rilevamento indipendente dalla lingua dell'interfaccia
+        - Piena compatibilita' con Qt6 e QGIS 4.0
+        - Stile del campo di ricerca leggibile anche con tema scuro
+        - Aggiunta una suite di test automatici
+        1.2
         - Fixed qgis Minimum Version to 3.34
         - Updated readme
         1.1
