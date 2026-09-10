@@ -13,14 +13,14 @@ repository=https://github.com/AlunniEagle/modeler_search_enhancer
 
 hasProcessingProvider=no
 changelog=2.0
-        - Risolto il crash di QGIS causato dal rilevamento a polling delle finestre
-        - Rilevamento ora event-driven e limitato alla singola finestra del modeler
-        - Corretto il filtro che si applicava a un solo campo per volta
-        - Corretta la selezione che poteva collegare la sorgente sbagliata nel modello
-        - Rilevamento indipendente dalla lingua dell'interfaccia
-        - Piena compatibilita' con Qt6 e QGIS 4.0
-        - Stile del campo di ricerca leggibile anche con tema scuro
-        - Aggiunta una suite di test automatici
+        - Fixed the QGIS crash caused by the polling-based window detection
+        - Detection is now event-driven and scoped to the single Modeler window
+        - Fixed the filter that only applied to one field at a time
+        - Fixed the selection that could wire the wrong source into the model
+        - Detection no longer depends on the interface language
+        - Full Qt6 and QGIS 4.0 compatibility
+        - Search field styling stays readable with dark themes
+        - Added an automated test suite
         1.2
         - Fixed qgis Minimum Version to 3.34
         - Updated readme

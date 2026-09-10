@@ -82,10 +82,17 @@ class TestCicloDiVitaDelPlugin(unittest.TestCase):
         self.assertEqual(len(self.iface.voci), 0)
 
     def test_due_cicli_initgui_unload_non_sollevano(self):
+        # Senza asserzioni sullo stato, un secondo `initGui()` che
+        # duplicasse la voce di menu passerebbe inosservato.
         self.plugin.initGui()
+        self.assertEqual(len(self.iface.voci), 1)
         self.plugin.unload()
+        self.assertEqual(len(self.iface.voci), 0)
+
         self.plugin.initGui()
+        self.assertEqual(len(self.iface.voci), 1)
         self.plugin.unload()
+        self.assertEqual(len(self.iface.voci), 0)
 
 
 if __name__ == "__main__":
