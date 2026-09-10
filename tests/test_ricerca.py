@@ -138,5 +138,67 @@ class TestIndipendenzaFraCombo(unittest.TestCase):
         self.assertIs(controller.parent(), combo)
 
 
+class TestRisoluzioneSulComboVivo(unittest.TestCase):
+    """Regressione di CR-3: la selezione usava un indice su uno snapshot."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = start_qgis()
+
+    def test_selezione_imposta_il_currentdata_giusto(self):
+        combo = combo_sorgenti()
+        controller = ComboSearchController(combo)
+        controller.attach()
+
+        self.assertTrue(controller.select_text("Edifici nuovi"))
+        self.assertEqual(combo.currentData(), "EDIFICI_NUOVI")
+        self.assertEqual(combo.currentText(), "Edifici nuovi")
+
+    def test_selezione_dopo_ripopolamento_resta_corretta(self):
+        # Il modeler ripopola i combo quando cambiano gli algoritmi a monte.
+        # Con lo snapshot, l'indice puntava alla voce sbagliata.
+        combo = combo_sorgenti()
+        controller = ComboSearchController(combo)
+        controller.attach()
+
+        combo.clear()
+        for nome in ["Reticolo idrico", "Edifici nuovi", "Aree verdi"]:
+            combo.addItem(nome, nome.replace(" ", "_").upper())
+
+        self.assertTrue(controller.select_text("Edifici nuovi"))
+        self.assertEqual(combo.currentData(), "EDIFICI_NUOVI")
+
+    def test_il_filtro_dopo_ripopolamento_usa_le_voci_nuove(self):
+        combo = combo_sorgenti()
+        controller = ComboSearchController(combo)
+        controller.attach()
+
+        combo.clear()
+        for nome in ["Reticolo idrico", "Aree verdi"]:
+            combo.addItem(nome, nome.replace(" ", "_").upper())
+
+        digita(controller, combo, "")
+        self.assertEqual(
+            controller.current_candidates(), ["Reticolo idrico", "Aree verdi"]
+        )
+
+    def test_testo_inesistente_non_cambia_la_selezione(self):
+        combo = combo_sorgenti()
+        combo.setCurrentIndex(2)
+        controller = ComboSearchController(combo)
+        controller.attach()
+
+        self.assertFalse(controller.select_text("non esiste"))
+        self.assertEqual(combo.currentData(), "EDIFICI_STORICI")
+
+    def test_selezione_su_combo_distrutto_non_solleva(self):
+        from qgis.PyQt import sip
+        combo = combo_sorgenti()
+        controller = ComboSearchController(combo)
+        controller.attach()
+        sip.delete(combo)
+        self.assertFalse(controller.select_text("Edifici nuovi"))
+
+
 if __name__ == "__main__":
     unittest.main()

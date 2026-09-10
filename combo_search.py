@@ -56,6 +56,7 @@ class ComboSearchController(QObject):
             QCompleter.CompletionMode.PopupCompletion
         )
 
+        self._completer.activated.connect(self.select_text)
         self._model.setStringList(self._live_items())
 
         line_edit = combo.lineEdit()
@@ -131,6 +132,34 @@ class ComboSearchController(QObject):
         # popup resta vuoto. Verificato con digitazione reale, tasto per
         # tasto, su QGIS 3.40.2.
         self._completer.setCompletionPrefix("")
+
+    # --- selezione -------------------------------------------------------
+
+    def select_text(self, text):
+        """Risolve `text` sul combo vivo e lo seleziona.
+
+        La risoluzione avviene con `findText` sul combo così com'è adesso,
+        non con l'indice di una lista memorizzata: è questo che impedisce di
+        collegare la sorgente sbagliata quando il modeler ha ripopolato il
+        combo dopo l'aggancio.
+
+        Restituisce True se la voce esisteva.
+        """
+        combo = self._combo
+        if not is_alive(combo):
+            return False
+        index = combo.findText(text)
+        if index < 0:
+            return False
+        self._updating = True
+        try:
+            combo.setCurrentIndex(index)
+            line_edit = combo.lineEdit()
+            if line_edit is not None:
+                line_edit.setText(combo.itemText(index))
+        finally:
+            self._updating = False
+        return True
 
     # --- presentazione ---------------------------------------------------
 
