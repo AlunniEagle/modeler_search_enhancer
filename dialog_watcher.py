@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """Rilevamento dei dialog del modeler e scoperta dei combo da migliorare."""
 
+from qgis.PyQt.QtCore import QEvent, QObject, QTimer
 from qgis.PyQt.QtWidgets import QComboBox
 from qgis.gui import QgsProcessingModelerParameterWidget
 
-from .plugin_support import SEARCH_MIN_ITEMS, is_alive
+from .combo_search import ComboSearchController
+from .plugin_support import SEARCH_MIN_ITEMS, is_alive, log_error
 
 MODELER_DIALOG_OBJECT_NAME = "ModelerParametersDialog"
 
@@ -51,3 +53,81 @@ def find_source_combos(dialog):
             if should_enhance(combo):
                 combos.append(combo)
     return combos
+
+
+class ModelerDialogWatcher(QObject):
+    """Aggancia la ricerca ai dialog del modeler quando vengono mostrati.
+
+    Sostituisce il polling di `QgsApplication.allWidgets()`, che era la
+    causa dei crash: quel polling enumerava ogni QWidget esistente, inclusi
+    quelli a metà costruzione e quelli già distrutti in C++, e scattava
+    anche dentro gli event loop annidati dei dialog nativi di Windows.
+
+    Qui non si enumera nulla di globale. Si reagisce al solo `Show` di un
+    dialog identificato per `objectName`, e l'aggancio è rimandato con
+    `singleShot(0)`: il dialog è già costruito quando riceve `Show`, e il
+    rinvio ci sposta fuori dallo stack di consegna dell'evento, dove il
+    dialog è ancora dentro il proprio `showEvent`.
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._controllers = []
+
+    def eventFilter(self, obj, event):
+        # Percorso caldo: questo metodo riceve ogni evento
+        # dell'applicazione. Un confronto di interi e si esce. Non
+        # aggiungere lavoro qui.
+        if event.type() == QEvent.Type.Show:
+            try:
+                if obj.objectName() == MODELER_DIALOG_OBJECT_NAME:
+                    QTimer.singleShot(0, lambda d=obj: self.enhance_dialog(d))
+            except (AttributeError, RuntimeError):
+                # obj può non essere più valido, o non essere un QObject
+                # con objectName: non è un errore da segnalare.
+                pass
+        return False
+
+    def enhance_dialog(self, dialog):
+        """Aggancia un controller a ogni combo sorgente di `dialog`.
+
+        Restituisce il numero di combo agganciati.
+        """
+        self._prune()
+        if not is_alive(dialog):
+            return 0
+        agganciati = 0
+        try:
+            for combo in find_source_combos(dialog):
+                controller = ComboSearchController(combo)
+                controller.attach()
+                self._controllers.append(controller)
+                agganciati += 1
+        except Exception as exc:  # noqa: BLE001
+            log_error("Aggancio del dialog non riuscito: {}".format(exc))
+        return agganciati
+
+    def _prune(self):
+        """Scarta i controller i cui combo Qt ha già distrutto.
+
+        I controller sono figli Qt dei rispettivi combo, quindi muoiono con
+        essi: qui si rimuovono solo i riferimenti Python rimasti, che è
+        proprio l'accumulo che il plugin originale non faceva mai.
+        """
+        self._controllers = [c for c in self._controllers if is_alive(c)]
+
+    def active_controller_count(self):
+        """Quanti controller sono attualmente attivi."""
+        self._prune()
+        return len(self._controllers)
+
+    def detach_all(self):
+        """Ripristina ogni combo agganciato. Invocato da `unload()`."""
+        for controller in self._controllers:
+            if not is_alive(controller):
+                continue
+            try:
+                controller.detach()
+            except Exception as exc:  # noqa: BLE001
+                log_error("Ripristino di un combo non riuscito: {}".format(exc))
+        self._controllers = []
