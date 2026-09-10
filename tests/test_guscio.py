@@ -1,0 +1,133 @@
+# -*- coding: utf-8 -*-
+"""Test del guscio del plugin e delle API vietate."""
+
+import io
+import os
+import unittest
+
+PLUGIN_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODULI = (
+    "modeler_search_enhancer.py",
+    "dialog_watcher.py",
+    "combo_search.py",
+    "plugin_support.py",
+)
+
+
+def sorgente(nome):
+    with io.open(os.path.join(PLUGIN_DIR, nome), encoding="utf-8") as handle:
+        return handle.read()
+
+
+class TestApiVietate(unittest.TestCase):
+    """Regressione di CR-1 e CR-5 a livello di sorgente."""
+
+    def test_nessun_uso_di_allwidgets(self):
+        for nome in MODULI:
+            self.assertNotIn("allWidgets", sorgente(nome), nome)
+
+    def test_il_watcher_non_ha_timer_propri(self):
+        # Il polling viveva in un QTimer ricorrente del watcher. Ora il
+        # watcher pianifica solo con QTimer.singleShot, che non si ripete.
+        testo = sorgente("dialog_watcher.py")
+        self.assertIn("QTimer.singleShot", testo)
+        self.assertNotIn(".start(", testo)
+
+    def test_il_debounce_e_single_shot(self):
+        # L'unico timer del plugin è il debounce per combo, e deve essere
+        # single-shot: uno ricorrente ci riporterebbe al polling.
+        testo = sorgente("combo_search.py")
+        self.assertIn("setSingleShot(True)", testo)
+        self.assertEqual(testo.count(".start("), 1)
+
+    def test_nessun_enum_non_scoped(self):
+        vietati = (
+            "Qt.CaseInsensitive",
+            "Qt.MatchContains",
+            "QComboBox.NoInsert",
+            "QCompleter.PopupCompletion",
+            "QCompleter.UnfilteredPopupCompletion",
+            "QEvent.Show",
+        )
+        for nome in MODULI:
+            testo = sorgente(nome)
+            for simbolo in vietati:
+                self.assertNotIn(simbolo, testo, "{} in {}".format(simbolo, nome))
+
+    def test_nessun_import_sip_diretto(self):
+        for nome in MODULI:
+            testo = sorgente(nome)
+            for riga in testo.splitlines():
+                self.assertNotEqual(riga.strip(), "import sip", nome)
+
+    def test_nessun_except_silenzioso_generico(self):
+        # `except Exception` seguito dal solo `pass` è ciò che ha nascosto
+        # la rottura su Qt6: le eccezioni inattese devono essere loggate.
+        # Il confronto è su espressione regolare e non su una stringa
+        # letterale, per non dipendere dall'indentazione.
+        import re
+
+        schema = re.compile(r"except\s+Exception[^\n]*:\s*\n\s*pass\b")
+        for nome in MODULI:
+            self.assertIsNone(schema.search(sorgente(nome)), nome)
+
+    def test_la_classe_morta_e_stata_rimossa(self):
+        self.assertNotIn(
+            "class SearchableComboBox", sorgente("modeler_search_enhancer.py")
+        )
+
+    def test_il_criterio_non_guarda_il_testo_delle_voci(self):
+        # Il rilevamento deve dipendere solo da count() e itemData(). Se
+        # tornasse a leggere itemText() sarebbe di nuovo legato alla lingua
+        # dell'interfaccia, che è la radice di CR-4.
+        import inspect
+
+        from modeler_search_enhancer.dialog_watcher import should_enhance
+
+        self.assertNotIn("itemText", inspect.getsource(should_enhance))
+
+    def test_nessuna_stringa_localizzata_nella_logica_di_rilevamento(self):
+        # Regressione di CR-4: il rilevamento si appoggiava a parole chiave
+        # italiane e inglesi, quindi non funzionava nelle altre lingue.
+        vietate = (
+            "from algorithm",
+            "dall'algoritmo",
+            "utilizzo del risultato",
+            "layer in ingresso",
+            "input layer",
+            "dipendenze",
+            "dependencies",
+            "tabella",
+            "selezione",
+        )
+        testo = sorgente("dialog_watcher.py").lower()
+        for frase in vietate:
+            self.assertNotIn(frase, testo, frase)
+
+
+class TestLocale(unittest.TestCase):
+    """Regressione di CR-6: TypeError su profilo senza la chiave del locale."""
+
+    def test_locale_assente_non_solleva(self):
+        from modeler_search_enhancer.modeler_search_enhancer import (
+            leggi_locale_utente,
+        )
+        from qgis.PyQt.QtCore import QSettings
+
+        vuoto = QSettings("ClaudeTest_NoSuchOrg", "ClaudeTest_NoSuchApp")
+        vuoto.remove("locale/userLocale")
+        self.assertEqual(leggi_locale_utente(vuoto), "")
+
+    def test_locale_presente_viene_troncato_a_due_lettere(self):
+        from modeler_search_enhancer.modeler_search_enhancer import (
+            leggi_locale_utente,
+        )
+        from qgis.PyQt.QtCore import QSettings
+
+        settings = QSettings("ClaudeTest_Org", "ClaudeTest_App")
+        settings.setValue("locale/userLocale", "it_IT")
+        self.assertEqual(leggi_locale_utente(settings), "it")
+
+
+if __name__ == "__main__":
+    unittest.main()
