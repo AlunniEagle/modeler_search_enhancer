@@ -23,8 +23,19 @@ class TestApiVietate(unittest.TestCase):
     """Regressione di CR-1 e CR-5 a livello di sorgente."""
 
     def test_nessun_uso_di_allwidgets(self):
+        # Il controllo è sull'albero sintattico, non sul testo. La
+        # docstring di `dialog_watcher` **cita** `QgsApplication.allWidgets()`
+        # per spiegare che cosa ha sostituito e perché: una ricerca
+        # testuale confonderebbe quella prosa con una chiamata reale.
+        # Solo un accesso ad attributo o un nome conta come uso.
+        import ast
+
         for nome in MODULI:
-            self.assertNotIn("allWidgets", sorgente(nome), nome)
+            for nodo in ast.walk(ast.parse(sorgente(nome))):
+                if isinstance(nodo, ast.Attribute):
+                    self.assertNotEqual(nodo.attr, "allWidgets", nome)
+                elif isinstance(nodo, ast.Name):
+                    self.assertNotEqual(nodo.id, "allWidgets", nome)
 
     def test_il_watcher_non_ha_timer_propri(self):
         # Il polling viveva in un QTimer ricorrente del watcher. Ora il
@@ -41,18 +52,36 @@ class TestApiVietate(unittest.TestCase):
         self.assertEqual(testo.count(".start("), 1)
 
     def test_nessun_enum_non_scoped(self):
-        vietati = (
-            "Qt.CaseInsensitive",
-            "Qt.MatchContains",
-            "QComboBox.NoInsert",
-            "QCompleter.PopupCompletion",
-            "QCompleter.UnfilteredPopupCompletion",
-            "QEvent.Show",
-        )
+        # Anche questo va sull'albero sintattico, per la stessa ragione: un
+        # commento che documentasse "non usare Qt.CaseInsensitive" farebbe
+        # fallire una ricerca testuale.
+        #
+        # La distinzione che conta: nella forma non scoped `Qt.CaseInsensitive`
+        # il nodo interno è un `Name`, mentre nella forma corretta
+        # `Qt.CaseSensitivity.CaseInsensitive` è a sua volta un `Attribute`.
+        # Il controllo sotto scatta quindi solo sulla forma sbagliata.
+        import ast
+
+        vietati = {
+            ("Qt", "CaseInsensitive"),
+            ("Qt", "MatchContains"),
+            ("QComboBox", "NoInsert"),
+            ("QCompleter", "PopupCompletion"),
+            ("QCompleter", "UnfilteredPopupCompletion"),
+            ("QEvent", "Show"),
+            ("QPalette", "Highlight"),
+        }
         for nome in MODULI:
-            testo = sorgente(nome)
-            for simbolo in vietati:
-                self.assertNotIn(simbolo, testo, "{} in {}".format(simbolo, nome))
+            for nodo in ast.walk(ast.parse(sorgente(nome))):
+                if not isinstance(nodo, ast.Attribute):
+                    continue
+                if not isinstance(nodo.value, ast.Name):
+                    continue
+                self.assertNotIn(
+                    (nodo.value.id, nodo.attr),
+                    vietati,
+                    "{}: {}.{}".format(nome, nodo.value.id, nodo.attr),
+                )
 
     def test_nessun_import_sip_diretto(self):
         for nome in MODULI:
