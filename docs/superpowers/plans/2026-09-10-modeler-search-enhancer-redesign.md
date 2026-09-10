@@ -1275,6 +1275,13 @@ Poi collega `reconcile_text` in `attach()`: aggiungi questa riga subito dopo `li
         line_edit.editingFinished.connect(self.reconcile_text)
 ```
 
+Infine, poiché `detach()` azzera `self._completer`, `refresh_filter()` va protetto: una passata di filtro dopo il distacco dereferenzierebbe `None` su `setCompletionPrefix`. Aggiungi la guardia in apertura di `refresh_filter()`, subito dopo il controllo esistente su `_updating` e `is_alive`:
+
+```python
+        if self._completer is None:
+            return
+```
+
 - [ ] **Step 4: Eseguire i test per verificare che passino**
 
 ```bash
