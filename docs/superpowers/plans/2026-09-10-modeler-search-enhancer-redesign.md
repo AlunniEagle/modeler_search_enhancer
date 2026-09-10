@@ -1878,40 +1878,150 @@ git commit -m "refactor: guscio del plugin snello, fix del locale, rimozione del
 
 ---
 
-### Task 9: Verifica su Qt6 e aggiornamento di `metadata.txt`
+### Task 9: Test di integrazione, verifica su Qt6 e `metadata.txt`
 
 **Files:**
+- Create: `tests/test_integrazione.py`
 - Modify: `metadata.txt`
 
 **Interfaces:**
-- Consumes: tutto quanto prodotto dai Task 1–8
+- Consumes: tutto quanto prodotto dai Task 1–8, più `classFactory` da `__init__.py`
 - Produces: nessuna nuova interfaccia
 
-- [ ] **Step 1: Eseguire la suite completa su QGIS 3.40.2 (Qt5)**
+Fino a qui ogni test esercita i moduli in isolamento. Manca il test che percorre lo **stesso cammino di QGIS** — `classFactory`, `initGui`, apertura di un vero `ModelerParametersDialog`, `unload` — ed è quello che prova più direttamente che il crash segnalato dalla community è risolto. Questo task lo aggiunge.
+
+- [ ] **Step 1: Creare `tests/test_integrazione.py`**
+
+```python
+# -*- coding: utf-8 -*-
+"""Test end-to-end del ciclo di vita reale del plugin.
+
+È il test che prova che il crash segnalato dalla community è risolto:
+percorre lo stesso cammino di QGIS — `classFactory`, `initGui`, apertura
+di un vero `ModelerParametersDialog`, `unload` — invece di esercitare i
+moduli in isolamento.
+"""
+
+import unittest
+
+from qgis.PyQt.QtWidgets import QApplication, QComboBox, QMainWindow
+
+from modeler_search_enhancer import classFactory
+from modeler_search_enhancer.tests.qgis_fixture import build_dialog, start_qgis
+
+
+class IfaceFinto:
+    """Il minimo di QgisInterface che il guscio del plugin usa davvero."""
+
+    def __init__(self, finestra):
+        self._finestra = finestra
+        self.voci = []
+
+    def mainWindow(self):
+        return self._finestra
+
+    def addPluginToMenu(self, menu, azione):
+        self.voci.append((menu, azione))
+
+    def removePluginMenu(self, menu, azione):
+        self.voci = [v for v in self.voci if v[1] is not azione]
+
+
+class TestCicloDiVitaDelPlugin(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.app = start_qgis()
+        cls.finestra = QMainWindow()
+
+    def setUp(self):
+        self.iface = IfaceFinto(self.finestra)
+        self.plugin = classFactory(self.iface)
+
+    def tearDown(self):
+        # `unload` deve essere sicuro anche se `initGui` non è mai stato
+        # chiamato, e ripetibile.
+        self.plugin.unload()
+
+    def test_classfactory_costruisce_il_plugin(self):
+        self.assertEqual(type(self.plugin).__name__, "ModelerSearchEnhancer")
+
+    def test_initgui_aggiunge_una_sola_voce_di_menu(self):
+        self.plugin.initGui()
+        self.assertEqual(len(self.iface.voci), 1)
+
+    def test_un_dialog_del_modeler_viene_agganciato_dal_plugin_caricato(self):
+        self.plugin.initGui()
+        dialog = build_dialog()
+        dialog.show()
+        QApplication.instance().processEvents()
+        self.assertGreater(self.plugin.watcher.active_controller_count(), 0)
+
+    def test_unload_ripristina_i_combo_agganciati(self):
+        self.plugin.initGui()
+        dialog = build_dialog()
+        dialog.show()
+        QApplication.instance().processEvents()
+        agganciati = self.plugin.watcher.active_controller_count()
+        editabili_prima = sum(
+            1 for c in dialog.findChildren(QComboBox) if c.isEditable())
+
+        self.plugin.unload()
+        editabili_dopo = sum(
+            1 for c in dialog.findChildren(QComboBox) if c.isEditable())
+
+        self.assertEqual(editabili_prima - editabili_dopo, agganciati)
+
+    def test_unload_svuota_il_menu(self):
+        self.plugin.initGui()
+        self.plugin.unload()
+        self.assertEqual(len(self.iface.voci), 0)
+
+    def test_due_cicli_initgui_unload_non_sollevano(self):
+        self.plugin.initGui()
+        self.plugin.unload()
+        self.plugin.initGui()
+        self.plugin.unload()
+
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+Nota sull'asserzione di `test_unload_ripristina_i_combo_agganciati`: il conteggio è differenziale e non assoluto perché nel dialog reale esiste un combo **nativamente editabile** che non ci appartiene. Confrontare la differenza col numero di combo agganciati verifica che siano stati ripristinati esattamente i nostri, senza toccare quello di QGIS.
+
+- [ ] **Step 2: Eseguire il solo test di integrazione**
+
+```bash
+cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.40.2/bin/python-qgis.bat" -m unittest modeler_search_enhancer.tests.test_integrazione -v
+```
+
+Atteso: `Ran 6 tests`, `OK`.
+
+- [ ] **Step 3: Eseguire la suite completa su QGIS 3.40.2 (Qt5)**
 
 ```bash
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.40.2/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 66 tests`, `OK`.
+Atteso: `Ran 72 tests`, `OK`.
 
-- [ ] **Step 2: Eseguire la suite completa su QGIS 4.0.0 (Qt6)**
+- [ ] **Step 4: Eseguire la suite completa su QGIS 4.0.0 (Qt6)**
 
 ```bash
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 4.0.0/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 66 tests`, `OK`. Se compare un `AttributeError` su un enum, è un enum non scoped sfuggito: correggilo e ripeti entrambe le esecuzioni.
+Atteso: `Ran 72 tests`, `OK`. Se compare un `AttributeError` su un enum, è un enum non scoped sfuggito: correggilo e ripeti entrambe le esecuzioni.
 
-- [ ] **Step 3: Eseguire la suite su QGIS 3.34.15, la versione minima dichiarata**
+- [ ] **Step 5: Eseguire la suite su QGIS 3.34.15, la versione minima dichiarata**
 
 ```bash
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.34.15/bin/python-qgis-ltr.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 66 tests`, `OK`. Questo verifica che `qgisMinimumVersion=3.34` sia una promessa mantenuta.
+Atteso: `Ran 72 tests`, `OK`. Questo verifica che `qgisMinimumVersion=3.34` sia una promessa mantenuta.
 
-- [ ] **Step 4: Aggiornare `metadata.txt`**
+- [ ] **Step 6: Aggiornare `metadata.txt`**
 
 Porta `version=1.2` a `version=2.0` e sostituisci il blocco `changelog=` mettendo la nuova voce in testa, prima di `1.2`:
 
@@ -1930,7 +2040,7 @@ changelog=2.0
 
 Lascia invariate le righe successive del changelog.
 
-- [ ] **Step 5: Verificare che i metadati siano coerenti**
+- [ ] **Step 7: Verificare che i metadati siano coerenti**
 
 ```bash
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/modeler_search_enhancer" && grep -E "^(version|qgisMinimumVersion)=" metadata.txt
@@ -1943,12 +2053,12 @@ qgisMinimumVersion=3.34
 version=2.0
 ```
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/modeler_search_enhancer"
-git add metadata.txt
-git commit -m "chore: versione 2.0 e changelog"
+git add tests/test_integrazione.py metadata.txt
+git commit -m "test: ciclo di vita end-to-end del plugin; versione 2.0"
 ```
 
 ---
@@ -2133,7 +2243,7 @@ Atteso: conteggi nell'ordine delle decine di righe, non delle migliaia. Se sono 
 cd "C:/Users/lalunni/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins" && "/c/Program Files/QGIS 3.40.2/bin/python-qgis.bat" -m unittest discover -s modeler_search_enhancer/tests -t . -v
 ```
 
-Atteso: `Ran 66 tests`, `OK`.
+Atteso: `Ran 72 tests`, `OK`.
 
 - [ ] **Step 6: Commit**
 
