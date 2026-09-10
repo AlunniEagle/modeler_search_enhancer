@@ -199,6 +199,24 @@ class TestRisoluzioneSulComboVivo(unittest.TestCase):
         sip.delete(combo)
         self.assertFalse(controller.select_text("Edifici nuovi"))
 
+    def test_il_completer_attivato_seleziona_la_voce(self):
+        # Il segnale `activated` del completer è l'unica via per cui la
+        # scelta fatta nel popup arriva a `select_text`. Senza questo test,
+        # rimuovere il collegamento in `attach()` non farebbe fallire
+        # nulla: il meccanismo resterebbe corretto ma irraggiungibile.
+        #
+        # Il completer si ottiene dall'API pubblica del line edit, senza
+        # toccare attributi privati del controller.
+        combo = combo_sorgenti()
+        controller = ComboSearchController(combo)
+        controller.attach()
+
+        completer = combo.lineEdit().completer()
+        self.assertIsNotNone(completer)
+        completer.activated[str].emit("Edifici nuovi")
+
+        self.assertEqual(combo.currentData(), "EDIFICI_NUOVI")
+
 
 if __name__ == "__main__":
     unittest.main()
