@@ -189,13 +189,13 @@ class ComboSearchController(QObject):
     def detach(self):
         """Riporta il combo allo stato in cui era prima di `attach`."""
         combo = self._combo
-        # In teardown il timer potrebbe essere già distrutto se il combo
-        # è stato distrutto: è l'unico caso in cui inghiottire l'eccezione
-        # del timer è corretto.
-        try:
+        # Il timer è figlio Qt del controller, che a sua volta è figlio del
+        # combo: se il combo è stato distrutto, il timer lo è con lui e
+        # `stop()` solleverebbe `RuntimeError`. Verificato su Qt5 e Qt6.
+        # Si usa la stessa primitiva `is_alive` del resto del progetto,
+        # invece di aggiungere un altro `try/except` da inghiottire.
+        if is_alive(self._timer):
             self._timer.stop()
-        except RuntimeError:
-            pass
         if not is_alive(combo):
             self._completer = None
             return
