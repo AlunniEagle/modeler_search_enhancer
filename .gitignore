@@ -7,3 +7,6 @@ __pycache__/
 
 # Artefatti di pacchettizzazione del plugin
 *.zip
+
+# Documentazione di processo (spec e piani): utile in locale, non nel repo pubblico
+docs/superpowers/
