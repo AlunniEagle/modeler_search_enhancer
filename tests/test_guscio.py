@@ -19,6 +19,20 @@ def sorgente(nome):
         return handle.read()
 
 
+def moduli_distribuiti():
+    """Ogni file .py alla radice del plugin, cioè tutto ciò che viene spedito.
+
+    `MODULI` elenca i moduli scritti a mano; questa funzione guarda invece
+    l'intero contenuto della cartella, perché un file generato o dimenticato
+    viene distribuito agli utenti esattamente come gli altri.
+    """
+    return sorted(
+        nome
+        for nome in os.listdir(PLUGIN_DIR)
+        if nome.endswith(".py")
+    )
+
+
 class TestApiVietate(unittest.TestCase):
     """Regressione di CR-1 e CR-5 a livello di sorgente."""
 
@@ -88,6 +102,34 @@ class TestApiVietate(unittest.TestCase):
             testo = sorgente(nome)
             for riga in testo.splitlines():
                 self.assertNotEqual(riga.strip(), "import sip", nome)
+
+    def test_nessun_import_diretto_di_pyqt(self):
+        # Il repository dei plugin QGIS esegue un controllo Qt6 su **ogni**
+        # file distribuito e rifiuta gli import diretti di PyQt5 o PyQt6:
+        # solo `qgis.PyQt` funziona su entrambe le versioni.
+        #
+        # Il controllo guarda tutti i .py della cartella, non i soli moduli
+        # scritti a mano: nella 2.0 a far fallire il controllo è stato un
+        # file generato che nessuno importava, e che i controlli limitati a
+        # `MODULI` non vedevano.
+        import ast
+
+        for nome in moduli_distribuiti():
+            for nodo in ast.walk(ast.parse(sorgente(nome))):
+                if isinstance(nodo, ast.Import):
+                    for alias in nodo.names:
+                        self.assertNotIn(
+                            alias.name.split(".")[0],
+                            ("PyQt5", "PyQt6"),
+                            "{}: import {}".format(nome, alias.name),
+                        )
+                elif isinstance(nodo, ast.ImportFrom):
+                    radice = (nodo.module or "").split(".")[0]
+                    self.assertNotIn(
+                        radice,
+                        ("PyQt5", "PyQt6"),
+                        "{}: from {} import ...".format(nome, nodo.module),
+                    )
 
     def test_nessun_except_silenzioso_generico(self):
         # `except Exception` seguito dal solo `pass` è ciò che ha nascosto

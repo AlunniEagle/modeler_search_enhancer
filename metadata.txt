@@ -3,7 +3,7 @@ name=Modeler Search Enhancement
 qgisMinimumVersion=3.34
 qgisMaximumVersion=4.99
 description=Advanced search functionality for QGIS Processing Modeler algorithms and parameters
-version=2.0
+version=2.1
 author=GIS Team
 email=gis@eagleprojects.it
 
@@ -13,7 +13,11 @@ tracker=https://github.com/AlunniEagle/modeler_search_enhancer/issues
 repository=https://github.com/AlunniEagle/modeler_search_enhancer
 
 hasProcessingProvider=no
-changelog=2.0
+changelog=2.1
+        - Removed an unused generated file that imported PyQt5 directly,
+          which failed the Qt6 check of the QGIS plugin repository
+        - Roughly half the download size
+        2.0
         - Fixed the QGIS crash caused by the polling-based window detection
         - Detection is now event-driven and scoped to the single Modeler window
         - Fixed the filter that only applied to one field at a time
