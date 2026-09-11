@@ -78,18 +78,37 @@ class TestFiltro(unittest.TestCase):
         # `setText()` non genera gli eventi di tastiera che fanno
         # sincronizzare a Qt il `completionPrefix` del completer. Questo
         # test digita davvero, tasto per tasto, ed è l'unico che vede il
-        # popup nelle stesse condizioni dell'utente: senza l'azzeramento
-        # del prefisso in `refresh_filter`, la query in ordine invertito
-        # qui sotto restituirebbe una lista vuota.
+        # popup nelle stesse condizioni dell'utente.
+        #
+        # L'asserzione sulla visibilità è indispensabile: senza riaprire il
+        # popup in `refresh_filter`, i candidati risultano corretti ma
+        # l'utente non vede nulla.
         combo = combo_sorgenti()
         controller = ComboSearchController(combo)
         controller.attach()
+        combo.show()
+        combo.lineEdit().setFocus()
 
         combo.lineEdit().clear()
         QTest.keyClicks(combo.lineEdit(), "nuovi edifici")
         controller.refresh_filter()
 
         self.assertEqual(controller.current_candidates(), ["Edifici nuovi"])
+        self.assertTrue(combo.lineEdit().completer().popup().isVisible())
+
+    def test_query_senza_risultati_nasconde_il_popup(self):
+        combo = combo_sorgenti()
+        controller = ComboSearchController(combo)
+        controller.attach()
+        combo.show()
+        combo.lineEdit().setFocus()
+
+        combo.lineEdit().clear()
+        QTest.keyClicks(combo.lineEdit(), "zzzz")
+        controller.refresh_filter()
+
+        self.assertEqual(controller.current_candidates(), [])
+        self.assertFalse(combo.lineEdit().completer().popup().isVisible())
 
 
 class TestIndipendenzaFraCombo(unittest.TestCase):

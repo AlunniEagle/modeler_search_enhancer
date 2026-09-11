@@ -1,6 +1,7 @@
 [general]
 name=Modeler Search Enhancement
 qgisMinimumVersion=3.34
+qgisMaximumVersion=4.99
 description=Advanced search functionality for QGIS Processing Modeler algorithms and parameters
 version=2.0
 author=GIS Team

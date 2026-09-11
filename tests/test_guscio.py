@@ -138,14 +138,20 @@ class TestLocale(unittest.TestCase):
     """Regressione di CR-6: TypeError su profilo senza la chiave del locale."""
 
     def test_locale_assente_non_solleva(self):
+        # Organizzazione/app neutre e dedicate al progetto, ripulite subito
+        # dopo l'uso: senza `clear()` il test lascerebbe chiavi persistenti
+        # nel registro di chi esegue i test.
         from modeler_search_enhancer.modeler_search_enhancer import (
             leggi_locale_utente,
         )
         from qgis.PyQt.QtCore import QSettings
 
-        vuoto = QSettings("ClaudeTest_NoSuchOrg", "ClaudeTest_NoSuchApp")
+        vuoto = QSettings("ModelerSearchEnhancerTest", "NoSuchApp")
         vuoto.remove("locale/userLocale")
-        self.assertEqual(leggi_locale_utente(vuoto), "")
+        try:
+            self.assertEqual(leggi_locale_utente(vuoto), "")
+        finally:
+            vuoto.clear()
 
     def test_locale_presente_viene_troncato_a_due_lettere(self):
         from modeler_search_enhancer.modeler_search_enhancer import (
@@ -153,9 +159,12 @@ class TestLocale(unittest.TestCase):
         )
         from qgis.PyQt.QtCore import QSettings
 
-        settings = QSettings("ClaudeTest_Org", "ClaudeTest_App")
+        settings = QSettings("ModelerSearchEnhancerTest", "LocaleApp")
         settings.setValue("locale/userLocale", "it_IT")
-        self.assertEqual(leggi_locale_utente(settings), "it")
+        try:
+            self.assertEqual(leggi_locale_utente(settings), "it")
+        finally:
+            settings.clear()
 
 
 if __name__ == "__main__":

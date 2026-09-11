@@ -9,6 +9,7 @@ from qgis.PyQt.QtWidgets import QApplication, QComboBox, QDialog
 from modeler_search_enhancer.dialog_watcher import (
     MODELER_DIALOG_OBJECT_NAME,
     ModelerDialogWatcher,
+    find_source_combos,
 )
 from modeler_search_enhancer.tests.qgis_fixture import build_dialog, start_qgis
 
@@ -91,6 +92,47 @@ class TestEventFilter(unittest.TestCase):
         QApplication.instance().processEvents()
         self.watcher.detach_all()
         self.assertEqual(self.watcher.active_controller_count(), 0)
+
+    def test_enhance_dialog_e_idempotente(self):
+        # Regressione di I2: un secondo aggancio allo stesso dialog non deve
+        # aumentare il conteggio dei controller, né impedire a
+        # `detach_all()` di riportare tutti i combo a non editabile. Con la
+        # guardia disattivata il secondo controller fotograferebbe
+        # `isEditable()` già a True, e dopo `detach_all()` il combo
+        # resterebbe editabile.
+        dialog = build_dialog()
+        dialog.show()
+        QApplication.instance().processEvents()
+        primo_conteggio = self.watcher.active_controller_count()
+        self.assertGreater(primo_conteggio, 0)
+
+        # Solo i combo che il plugin gestisce davvero: il dialog reale
+        # contiene anche altri QComboBox nativi di QGIS, alcuni editabili
+        # di loro, che non c'entrano con l'idempotenza sotto test.
+        combos_gestiti = find_source_combos(dialog)
+        self.assertTrue(combos_gestiti)
+
+        agganciati_di_nuovo = self.watcher.enhance_dialog(dialog)
+        self.assertEqual(agganciati_di_nuovo, 0)
+        self.assertEqual(self.watcher.active_controller_count(), primo_conteggio)
+
+        self.watcher.detach_all()
+        self.assertFalse(any(combo.isEditable() for combo in combos_gestiti))
+
+    def test_laggancio_e_rimandato_non_sincrono(self):
+        # Lo `Show` è consegnato in modo sincrono da `show()`, ma
+        # `eventFilter` rimanda l'aggancio con `QTimer.singleShot(0, ...)`.
+        # Subito dopo `show()`, prima di pompare l'event loop, non deve
+        # ancora esserci nessun controller: è il vincolo anti-crash che
+        # sposta l'aggancio fuori dallo stack di consegna dell'evento. Con
+        # una chiamata diretta al posto di `singleShot` questo primo assert
+        # fallirebbe.
+        dialog = build_dialog()
+        dialog.show()
+        self.assertEqual(self.watcher.active_controller_count(), 0)
+
+        QApplication.instance().processEvents()
+        self.assertGreater(self.watcher.active_controller_count(), 0)
 
 
 if __name__ == "__main__":

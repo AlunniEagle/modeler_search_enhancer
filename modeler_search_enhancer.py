@@ -72,7 +72,7 @@ class ModelerSearchEnhancer:
             QIcon(':/images/themes/default/mActionHelpContents.svg'),
             self.tr(u'Help'),
             self.iface.mainWindow())
-        help_action.setStatusTip(self.tr(u'Mostra la documentazione del plugin'))
+        help_action.setStatusTip(self.tr(u'Show the plugin documentation'))
         help_action.triggered.connect(self.showHelp)
 
         self.iface.addPluginToMenu(self.tr(MENU_LABEL), help_action)
@@ -86,8 +86,8 @@ class ModelerSearchEnhancer:
             return
         QMessageBox.warning(
             self.iface.mainWindow(),
-            self.tr(u'File di aiuto non trovato'),
-            self.tr(u'Documentazione non trovata in:\n{}').format(help_file))
+            self.tr(u'Help file not found'),
+            self.tr(u'Documentation not found at:\n{}').format(help_file))
 
     def unload(self):
         """Ripristina i combo, rimuove il watcher e svuota il menu."""
@@ -99,3 +99,7 @@ class ModelerSearchEnhancer:
         for action in self.actions:
             self.iface.removePluginMenu(self.tr(MENU_LABEL), action)
         self.actions = []
+
+        if self.translator is not None:
+            QCoreApplication.removeTranslator(self.translator)
+            self.translator = None

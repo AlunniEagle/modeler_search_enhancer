@@ -43,6 +43,14 @@ class TestIsAlive(unittest.TestCase):
         sip.delete(widget)
         self.assertFalse(is_alive(widget))
 
+    def test_stringa_non_e_viva(self):
+        # Passa dal ramo `except (TypeError, RuntimeError)`: `sip.isdeleted`
+        # su un oggetto che non è un wrapper sip solleva TypeError.
+        self.assertFalse(is_alive("stringa"))
+
+    def test_intero_non_e_vivo(self):
+        self.assertFalse(is_alive(42))
+
 
 class TestHarness(unittest.TestCase):
     def test_ci_sono_almeno_cinque_sorgenti(self):

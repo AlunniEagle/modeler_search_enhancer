@@ -135,6 +135,15 @@ class ComboSearchController(QObject):
         # popup resta vuoto. Verificato con digitazione reale, tasto per
         # tasto, su QGIS 3.40.2.
         self._completer.setCompletionPrefix("")
+        # Azzerare il prefisso corregge il modello ma non basta: a ogni
+        # tasto Qt nasconde il popup quando il suo filtro non trova nulla,
+        # e il nostro arriva 300 ms dopo. Senza riaprirlo, una query
+        # multi-termine fuori ordine dà candidati corretti e schermo vuoto.
+        # Verificato su Qt5 e Qt6.
+        if self._completer.completionCount():
+            self._completer.complete()
+        else:
+            self._completer.popup().hide()
 
     # --- selezione -------------------------------------------------------
 

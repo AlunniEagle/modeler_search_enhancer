@@ -42,8 +42,34 @@ def start_qgis():
     return _app
 
 
+def chiave_di(nome):
+    """La chiave del parametro di modello derivata dal suo nome visibile.
+
+    Usata sia per registrare i parametri del modello sia per riferirli in
+    `fromModelParameter`, così le due derivazioni non possono andare fuori
+    sincrono se `SOURCE_NAMES` cambia.
+    """
+    return nome.replace(" ", "_").upper()
+
+
+# Descrizioni dei bufferi a monte. Devono essere abbastanza numerosi perché,
+# nel dialog reale, il combo degli output di algoritmo superi le 5 voci del
+# gate `SEARCH_MIN_ITEMS`: con un solo algoritmo a monte quel combo ha 1
+# sola voce e il ramo `list` di `itemData` — gli output di algoritmo, il
+# caso d'uso principale del plugin — non viene mai esercitato su un dialog
+# reale.
+BUFFER_DESCRIPTIONS = [
+    "Buffer delle strade urbane",
+    "Buffer delle strade rurali",
+    "Buffer degli edifici storici",
+    "Buffer degli edifici nuovi",
+    "Buffer dei confini comunali",
+    "Buffer dei punti di interesse",
+]
+
+
 def build_dialog():
-    """Un ModelerParametersDialog reale con 6 input e 2 algoritmi figli."""
+    """Un ModelerParametersDialog reale con 6 input e 6 algoritmi figli a monte."""
     start_qgis()
 
     from qgis.core import (
@@ -58,25 +84,28 @@ def build_dialog():
 
     model = QgsProcessingModelAlgorithm("test", "test")
     for name in SOURCE_NAMES:
-        key = name.replace(" ", "_").upper()
+        key = chiave_di(name)
         model.addModelParameter(
             QgsProcessingParameterFeatureSource(key, name),
             QgsProcessingModelParameter(key),
         )
 
-    primo = QgsProcessingModelChildAlgorithm("native:buffer")
-    primo.setChildId("buffer_1")
-    primo.setDescription("Buffer delle strade")
-    primo.addParameterSources(
-        "INPUT",
-        [QgsProcessingModelChildParameterSource.fromModelParameter("STRADE_URBANE")],
-    )
-    model.addChildAlgorithm(primo)
+    for indice, descrizione in enumerate(BUFFER_DESCRIPTIONS, start=1):
+        figlio = QgsProcessingModelChildAlgorithm("native:buffer")
+        figlio.setChildId("buffer_{}".format(indice))
+        figlio.setDescription(descrizione)
+        if indice == 1:
+            figlio.addParameterSources(
+                "INPUT",
+                [QgsProcessingModelChildParameterSource.fromModelParameter(
+                    chiave_di(SOURCE_NAMES[0]))],
+            )
+        model.addChildAlgorithm(figlio)
 
-    secondo = QgsProcessingModelChildAlgorithm("native:centroids")
-    secondo.setChildId("centroids_1")
-    secondo.setDescription("Centroidi")
-    model.addChildAlgorithm(secondo)
+    ultimo = QgsProcessingModelChildAlgorithm("native:centroids")
+    ultimo.setChildId("centroids_1")
+    ultimo.setDescription("Centroidi")
+    model.addChildAlgorithm(ultimo)
 
     alg = QgsApplication.processingRegistry().createAlgorithmById("native:centroids")
     return ModelerParametersDialog(alg, model, "centroids_1")

@@ -97,14 +97,21 @@ class ModelerDialogWatcher(QObject):
         if not is_alive(dialog):
             return 0
         agganciati = 0
-        try:
-            for combo in find_source_combos(dialog):
+        for combo in find_source_combos(dialog):
+            # Idempotenza: un combo già agganciato da un controller
+            # precedente va saltato. Senza questa guardia un secondo
+            # controller fotograferebbe isEditable() dopo che il primo
+            # l'ha già messo a True, e dopo detach_all() il combo
+            # resterebbe editabile.
+            if combo.findChild(ComboSearchController) is not None:
+                continue
+            try:
                 controller = ComboSearchController(combo)
                 controller.attach()
                 self._controllers.append(controller)
                 agganciati += 1
-        except Exception as exc:  # noqa: BLE001
-            log_error("Aggancio del dialog non riuscito: {}".format(exc))
+            except Exception as exc:  # noqa: BLE001
+                log_error("Aggancio del dialog non riuscito: {}".format(exc))
         return agganciati
 
     def _prune(self):

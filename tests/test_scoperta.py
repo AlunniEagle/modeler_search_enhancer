@@ -44,10 +44,28 @@ class TestFindSourceCombos(unittest.TestCase):
             self.assertIsInstance(combo.itemData(0), (str, list))
             self.assertNotIsInstance(combo.itemData(0), bool)
 
+    def test_almeno_un_combo_trovato_e_di_output_di_algoritmo(self):
+        # Criterio di accettazione di I4: la fixture deve mettere abbastanza
+        # algoritmi a monte perché il ramo `list` di `itemData` — gli
+        # output di algoritmo, il caso d'uso principale del plugin — sia
+        # davvero esercitato su un dialog reale, e non solo su un combo
+        # sintetico come in test_criterio.py.
+        tipi = [type(combo.itemData(0)) for combo in find_source_combos(self.dialog)]
+        self.assertIn(list, tipi)
+
     def test_esclude_i_combo_booleani(self):
-        for combo in find_source_combos(self.dialog):
-            testi = [combo.itemText(i) for i in range(combo.count())]
-            self.assertNotEqual(sorted(testi), ["No", "Yes"])
+        # Un combo booleano reale ha solo 2 voci (Sì/No) ed è già escluso
+        # dal gate sul conteggio: verificarlo su `find_source_combos(dialog)`
+        # non proverebbe mai che l'esclusione dipende dal *tipo*. Si
+        # costruisce quindi un combo sintetico con 6 voci booleane, sopra
+        # la soglia, così l'unica ragione per cui `should_enhance` lo scarta
+        # è il tipo di `itemData`.
+        from modeler_search_enhancer.dialog_watcher import should_enhance
+
+        combo = QComboBox()
+        for i in range(6):
+            combo.addItem("Opzione %d" % i, i % 2 == 0)
+        self.assertFalse(should_enhance(combo))
 
     def test_le_virgolette_tipografiche_non_ostacolano_il_rilevamento(self):
         # Le etichette degli output di algoritmo usano U+201C/U+201D, non
