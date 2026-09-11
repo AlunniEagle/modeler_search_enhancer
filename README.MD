@@ -155,7 +155,7 @@ We welcome contributions! Please follow these guidelines:
 1. **Clone the repository**
    ```bash
    git clone https://github.com/AlunniEagle/modeler_search_enhancer.git
-   cd modeler-search-enhancer
+   cd modeler_search_enhancer
    ```
 
 2. **Create development environment**
