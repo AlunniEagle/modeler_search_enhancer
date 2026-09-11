@@ -1,8 +1,9 @@
 [general]
 name=Modeler Search Enhancement
 qgisMinimumVersion=3.34
+qgisMaximumVersion=4.99
 description=Advanced search functionality for QGIS Processing Modeler algorithms and parameters
-version=1.2
+version=2.0
 author=GIS Team
 email=gis@eagleprojects.it
 
@@ -12,7 +13,16 @@ tracker=https://github.com/AlunniEagle/modeler_search_enhancer/issues
 repository=https://github.com/AlunniEagle/modeler_search_enhancer
 
 hasProcessingProvider=no
-changelog=1.2
+changelog=2.0
+        - Fixed the QGIS crash caused by the polling-based window detection
+        - Detection is now event-driven and scoped to the single Modeler window
+        - Fixed the filter that only applied to one field at a time
+        - Fixed the selection that could wire the wrong source into the model
+        - Detection no longer depends on the interface language
+        - Full Qt6 and QGIS 4.0 compatibility
+        - Search field styling stays readable with dark themes
+        - Added an automated test suite
+        1.2
         - Fixed qgis Minimum Version to 3.34
         - Updated readme
         1.1

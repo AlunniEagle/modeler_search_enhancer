@@ -3,7 +3,7 @@
 **Advanced search functionality for QGIS Processing Modeler algorithm inputs and outputs**
 
 ![QGIS Plugin](https://img.shields.io/badge/QGIS-Plugin-green)
-![Version](https://img.shields.io/badge/version-1.2-blue)
+![Version](https://img.shields.io/badge/version-2.0-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0-orange)
 
 ## 📖 Overview
@@ -18,7 +18,7 @@ The **Modeler Search Enhancer** plugin provides intelligent search capabilities 
 - **🚫 Non-intrusive** - Ignores configuration and dependency ComboBoxes
 - **🔤 Case-insensitive** - Search works regardless of capitalization
 - **📝 Multi-term Search** - Search for multiple words simultaneously
-- **🎨 Visual Indicators** - Enhanced ComboBoxes have green borders and search placeholders
+- **🎨 Visual Indicators** - Enhanced ComboBoxes have a highlighted border and search placeholders
 
 ## 🚀 Installation
 
@@ -65,45 +65,45 @@ The **Modeler Search Enhancer** plugin provides intelligent search capabilities 
 
 ### Visual Indicators
 
-- **🟢 Green Border:** Indicates a ComboBox has been enhanced with search
+- **🔲 Highlighted Border:** Indicates a ComboBox has been enhanced with search
 - **🔍 Placeholder Text:** Shows "🔍 Type to filter..." in enhanced ComboBoxes  
-- **💡 Light Green Background:** Enhanced ComboBoxes have a subtle green background
+- **🌗 Theme Aware:** The highlight follows your QGIS colour theme, so it stays readable in dark mode
 
 ## ⚙️ How It Works
 
 The plugin operates automatically in the background:
 
-1. **🔍 Monitors** - Continuously monitors for open Modeler windows
+1. **🔍 Detects** - Activates as soon as an algorithm configuration window opens in the Modeler
 2. **🧠 Analyzes** - Identifies ComboBoxes that contain algorithm outputs
 3. **⚡ Enhances** - Adds search functionality only to relevant ComboBoxes
 4. **🎯 Filters** - Provides real-time filtering based on your input
 
 ### Intelligent Detection
 
-The plugin uses advanced analysis to determine which ComboBoxes to enhance:
+Detection is structural rather than text-based, so it behaves the same in every interface language:
 
 #### ✅ **Enhanced ComboBoxes:**
-- Algorithm output selection fields
-- Input layer ComboBoxes with multiple options
-- Fields containing text like `"Result from algorithm"` or `dall'algoritmo`
+- Fields listing the model's own inputs
+- Fields listing outputs of upstream algorithms
+- Only when they hold at least five entries
 
 #### ❌ **Ignored ComboBoxes:**
-- Configuration dropdowns (Dependencies, Parameters)
-- ComboBoxes with few options (< 3 items)
-- Simple value dropdowns (true/false, yes/no)
+- Boolean dropdowns (yes/no)
+- Enumerated parameter dropdowns
+- Anything with fewer than five entries
 
 ## 🛠️ Technical Details
 
 ### System Requirements
-- **QGIS:** 3.28.9 or higher
+- **QGIS:** 3.34 or higher, including the 4.x series built on Qt6
 - **Python:** 3.6+
-- **Qt:** 5.9+
+- **Qt:** 5.15+ or 6.x
 
 ### Architecture
 - **Language:** Python
 - **Framework:** PyQt5/6
 - **Integration:** QGIS Plugin API
-- **Detection:** Qt Widget Analysis
+- **Detection:** Structural widget inspection, independent of interface language
 - **Search:** QCompleter with custom filtering
 
 ## 🎨 Search Capabilities
@@ -154,8 +154,8 @@ We welcome contributions! Please follow these guidelines:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/AlunniEagle/modeler-search-enhancer.git
-   cd modeler-search-enhancer
+   git clone https://github.com/AlunniEagle/modeler_search_enhancer.git
+   cd modeler_search_enhancer
    ```
 
 2. **Create development environment**
@@ -214,6 +214,6 @@ When reporting bugs, please include:
 
 **Made with ❤️ for the QGIS Community**
 
-[⭐ Star this repository](https://github.com/AlunniEagle/modeler-search-enhancer) if you find it useful!
+[⭐ Star this repository](https://github.com/AlunniEagle/modeler_search_enhancer) if you find it useful!
 
 </div>

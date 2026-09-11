@@ -124,7 +124,7 @@
         <div class="step">
             <strong>Step 4:</strong> You'll notice the ComboBox now has:
             <ul>
-                <li>🟢 Green border indicating it's searchable</li>
+                <li>🔲 A highlighted border indicating it's searchable</li>
                 <li>🔍 Search placeholder text</li>
                 <li>✨ Enhanced filtering capabilities</li>
             </ul>
@@ -144,23 +144,27 @@
 
         <p>The plugin automatically:</p>
         <ol>
-            <li><strong>Monitors</strong> - Continuously monitors for open Modeler windows</li>
+            <li><strong>Detects</strong> - Activates as soon as an algorithm configuration window opens in the Modeler</li>
             <li><strong>Analyzes</strong> - Identifies ComboBoxes that contain algorithm outputs</li>
             <li><strong>Enhances</strong> - Adds search functionality only to relevant ComboBoxes</li>
             <li><strong>Filters</strong> - Provides real-time filtering based on your input</li>
         </ol>
 
         <div class="warning">
-            <strong>⚠️ Note:</strong> The plugin only enhances ComboBoxes that contain algorithm outputs (like "Result from buffer operation"). It intelligently ignores configuration ComboBoxes such as "Dependencies", parameter dropdowns, and other non-algorithm-output fields.
+            <strong>⚠️ Note:</strong> The plugin only enhances fields that list model inputs and algorithm outputs, and only when they hold at least five entries. Boolean and enumerated parameter dropdowns are left untouched. Detection is structural, so it works the same in every interface language.
         </div>
 
         <h2><span class="icon">🎨</span>Visual Indicators</h2>
 
         <ul>
-            <li><strong>🟢 Green Border:</strong> Indicates a ComboBox has been enhanced with search</li>
+            <li><strong>🔲 Highlighted Border:</strong> Indicates a ComboBox has been enhanced with search</li>
             <li><strong>🔍 Placeholder Text:</strong> Shows "🔍 Type to filter..." in enhanced ComboBoxes</li>
-            <li><strong>💡 Light Green Background:</strong> Enhanced ComboBoxes have a subtle green background</li>
+            <li><strong>🌗 Theme Aware:</strong> The highlight follows your QGIS colour theme, so it stays readable in dark mode</li>
         </ul>
+
+        <div class="warning">
+            <strong>⚠️ Note:</strong> If you type text that does not match any entry and then click away, the field returns to the value that is actually selected. The model always uses the selected entry, never the text you typed.
+        </div>
 
         <h2><span class="icon">🔧</span>Search Capabilities</h2>
 
@@ -177,10 +181,10 @@
 
         <h2><span class="icon">🛠️</span>Technical Details</h2>
 
-        <p>The plugin uses advanced Qt widget analysis to:</p>
+        <p>The plugin locates candidate fields structurally, without reading their contents:</p>
         <ul>
             <li>Identify Modeler dialog windows</li>
-            <li>Analyze ComboBox content to determine if they contain algorithm outputs</li>
+            <li>Find ComboBox fields by their position in the dialog's widget structure and by the type of the data attached to each entry, not by the text shown to the user</li>
             <li>Apply search enhancements only where appropriate</li>
             <li>Maintain compatibility with existing Modeler functionality</li>
         </ul>
@@ -206,7 +210,7 @@
 
         <div class="version-info">
             <p><strong>Modeler Search Enhancer Plugin</strong><br>
-            Version 1.2 | Compatible with QGIS >= 3.34<br>
+            Version 2.0 | Compatible with QGIS >= 3.34, including the 4.x series<br>
             Developed by GIS Team | gis@eagleprojects.it</p>
         </div>
     </div>
