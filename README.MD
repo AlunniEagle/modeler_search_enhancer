@@ -154,7 +154,7 @@ We welcome contributions! Please follow these guidelines:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/AlunniEagle/modeler-search-enhancer.git
+   git clone https://github.com/AlunniEagle/modeler_search_enhancer.git
    cd modeler-search-enhancer
    ```
 
@@ -214,6 +214,6 @@ When reporting bugs, please include:
 
 **Made with ❤️ for the QGIS Community**
 
-[⭐ Star this repository](https://github.com/AlunniEagle/modeler-search-enhancer) if you find it useful!
+[⭐ Star this repository](https://github.com/AlunniEagle/modeler_search_enhancer) if you find it useful!
 
 </div>

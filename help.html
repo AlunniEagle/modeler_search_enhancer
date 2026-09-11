@@ -181,10 +181,10 @@
 
         <h2><span class="icon">🛠️</span>Technical Details</h2>
 
-        <p>The plugin uses advanced Qt widget analysis to:</p>
+        <p>The plugin locates candidate fields structurally, without reading their contents:</p>
         <ul>
             <li>Identify Modeler dialog windows</li>
-            <li>Analyze ComboBox content to determine if they contain algorithm outputs</li>
+            <li>Find ComboBox fields by their position in the dialog's widget structure and by the type of the data attached to each entry, not by the text shown to the user</li>
             <li>Apply search enhancements only where appropriate</li>
             <li>Maintain compatibility with existing Modeler functionality</li>
         </ul>
